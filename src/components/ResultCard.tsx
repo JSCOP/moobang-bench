@@ -1,4 +1,5 @@
 import { Link } from 'expo-router';
+import type { CSSProperties } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { editorScore, getModel, getTool } from '@/data';
 import type { Result } from '@/data/validate';
@@ -27,15 +28,35 @@ export function ResultCard({ result, community }: ResultCardProps) {
           {result.tool !== 'none' ? <Text style={styles.toolTag}>{tool?.name ?? result.tool}</Text> : null}
         </View>
         <ScoreBadge editor={editorScore(result)} community={community} />
-        <Link href={{ pathname: '/results/[id]', params: { id: result.id } }} asChild>
-          <Pressable accessibilityRole="link" style={styles.link}>
-            <Text style={styles.linkText}>{t('view_result')} →</Text>
-          </Pressable>
-        </Link>
+        <View style={styles.actions}>
+          <a
+            href={`/demos/${result.id}/index.html`}
+            target="_blank"
+            rel="noreferrer"
+            style={playLinkStyle}
+          >
+            {t('play_demo')} ↗
+          </a>
+          <Link href={{ pathname: '/results/[id]', params: { id: result.id } }} asChild>
+            <Pressable accessibilityRole="link" style={styles.link}>
+              <Text style={styles.linkText}>{t('view_result')} →</Text>
+            </Pressable>
+          </Link>
+        </View>
       </View>
     </View>
   );
 }
+
+const playLinkStyle: CSSProperties = {
+  color: colors.onAccent,
+  backgroundColor: colors.accent,
+  borderRadius: radius.sm,
+  padding: '8px 12px',
+  fontSize: 13,
+  fontWeight: 700,
+  textDecoration: 'none',
+};
 
 const styles = StyleSheet.create({
   card: { flexBasis: 320, flexGrow: 1, maxWidth: 560, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface },
@@ -43,6 +64,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   title: { color: colors.text, fontSize: 15, fontWeight: '700' },
   toolTag: { color: colors.muted, fontSize: 11, fontWeight: '600', borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  actions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md },
   link: { alignSelf: 'flex-start', paddingVertical: spacing.xs },
   linkText: { color: colors.accent, fontSize: 13, fontWeight: '700' },
 });

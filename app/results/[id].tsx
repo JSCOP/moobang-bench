@@ -1,6 +1,6 @@
 import Head from 'expo-router/head';
 import { useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AdSlot } from '@/components/AdSlot';
 import { DemoFrame } from '@/components/DemoFrame';
@@ -59,8 +59,8 @@ export default function ResultDetailPage() {
         <Pressable accessibilityRole="button" style={styles.button} onPress={() => void fullscreenRef.current?.requestFullscreen()}>
           <Text style={styles.buttonText}>{t('fullscreen')}</Text>
         </Pressable>
-        <a href={`/demos/${result.id}/index.html`} target="_blank" rel="noreferrer" style={styles.rawLink as React.CSSProperties}>
-          {t('open_raw')} ↗
+        <a href={`/demos/${result.id}/index.html`} target="_blank" rel="noreferrer" style={playLinkStyle}>
+          {t('play_demo')} ↗
         </a>
       </View>
 
@@ -101,6 +101,16 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+const playLinkStyle: CSSProperties = {
+  color: colors.onAccent,
+  backgroundColor: colors.accent,
+  borderRadius: radius.sm,
+  padding: '8px 12px',
+  fontSize: 13,
+  fontWeight: 700,
+  textDecoration: 'none',
+};
+
 const styles = StyleSheet.create({
   page: { paddingVertical: spacing.xl, gap: spacing.lg },
   header: { gap: spacing.sm },
@@ -109,7 +119,6 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, alignItems: 'center' },
   button: { backgroundColor: colors.text, borderRadius: radius.sm, paddingHorizontal: spacing.lg, paddingVertical: 8 },
   buttonText: { color: colors.bg, fontSize: 13, fontWeight: '700' },
-  rawLink: { color: colors.muted, fontSize: 13, fontWeight: '600', textDecorationLine: 'none' },
   panels: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   panel: { flexBasis: 320, flexGrow: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
   panelTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },

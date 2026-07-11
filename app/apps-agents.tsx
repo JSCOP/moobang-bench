@@ -6,22 +6,23 @@ import { useScores } from '@/hooks/useScores';
 import { useI18n } from '@/i18n/I18nContext';
 import { colors, spacing } from '@/theme';
 
-export default function LeaderboardPage() {
+export default function AppsAgentsPage() {
   const { t } = useI18n();
   const scores = useScores(getResults().map((result) => result.id));
+
   return (
     <View style={styles.page}>
       <Head>
-        <title>Leaderboard — MoobangBench</title>
-        <meta name="description" content="Compare AI coding models and tools by editor and community scores." />
+        <title>Apps &amp; Agents Ranking — MoobangBench</title>
+        <meta name="description" content="Compare coding apps and agent harnesses across benchmark results." />
       </Head>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>{t('nav_rankings')}</Text>
-        <Text style={styles.title}>{t('leaderboard_title')}</Text>
-        <Text style={styles.description}>{t('leaderboard_description')}</Text>
+        <Text style={styles.title}>{t('apps_agents_title')}</Text>
+        <Text style={styles.description}>{t('apps_agents_description')}</Text>
       </View>
       <ScrollView horizontal contentContainerStyle={styles.scrollContent}>
-        <LeaderboardTable title={t('models')} rows={leaderboard('model')} scores={scores} />
+        <LeaderboardTable title={t('tools')} rows={leaderboard('tool')} scores={scores} />
       </ScrollView>
     </View>
   );

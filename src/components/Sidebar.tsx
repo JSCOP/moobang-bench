@@ -6,13 +6,17 @@ import { useI18n } from '@/i18n/I18nContext';
 import { colors, spacing } from '@/theme';
 import { LangToggle } from './LangToggle';
 
-type NavItem = { href: '/' | '/benchmarks' | '/leaderboard' | '/about'; label: string };
+type NavItem = { href: '/' | '/benchmarks' | '/leaderboard' | '/apps-agents' | '/about'; label: string };
 
 const exploreItems: NavItem[] = [
   { href: '/', label: 'nav_home' },
   { href: '/benchmarks', label: 'nav_benchmarks' },
-  { href: '/leaderboard', label: 'nav_leaderboard' },
   { href: '/about', label: 'nav_about' },
+];
+
+const rankingItems: NavItem[] = [
+  { href: '/leaderboard', label: 'nav_leaderboard' },
+  { href: '/apps-agents', label: 'nav_apps_agents' },
 ];
 
 
@@ -38,6 +42,22 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
     <View style={styles.navBody}>
       <Text style={styles.sectionLabel}>{t('nav_explore')}</Text>
       {exploreItems.map((item) => {
+        const active = pathname === item.href;
+        return (
+          <Link key={item.href} href={item.href} asChild>
+            <Pressable
+              accessibilityRole="link"
+              onPress={onNavigate}
+              style={StyleSheet.flatten([styles.navLink, active && styles.navLinkActive])}
+            >
+              <Text style={[styles.navText, active && styles.navTextActive]}>{t(item.label)}</Text>
+            </Pressable>
+          </Link>
+        );
+      })}
+
+      <Text style={[styles.sectionLabel, styles.sectionGap]}>{t('nav_rankings').toUpperCase()}</Text>
+      {rankingItems.map((item) => {
         const active = pathname === item.href;
         return (
           <Link key={item.href} href={item.href} asChild>
