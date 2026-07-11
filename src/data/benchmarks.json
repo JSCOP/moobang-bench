@@ -1,0 +1,9 @@
+[
+  {
+    "id": "geometry-dash",
+    "title": "Geometry Dash Auto-Runner",
+    "description": "Single-file Geometry-Dash-style auto-runner in one HTML file",
+    "date": "2026-07-10",
+    "tags": ["game", "canvas", "single-file"]
+  }
+]

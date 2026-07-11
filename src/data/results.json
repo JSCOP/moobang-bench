@@ -1,0 +1,7 @@
+[
+  { "id": "geometry-dash-fable5", "benchmark": "geometry-dash", "model": "claude-fable-5", "tool": "none", "date": "2026-07-10", "editorScores": null },
+  { "id": "geometry-dash-fable5-omp", "benchmark": "geometry-dash", "model": "claude-fable-5", "tool": "oh-my-pi", "date": "2026-07-10", "editorScores": null },
+  { "id": "geometry-dash-gpt5.6sol", "benchmark": "geometry-dash", "model": "gpt-5.6-sol", "tool": "none", "date": "2026-07-10", "editorScores": null },
+  { "id": "geometry-dash-gpt5.6sol-omp", "benchmark": "geometry-dash", "model": "gpt-5.6-sol", "tool": "oh-my-pi", "date": "2026-07-10", "editorScores": null },
+  { "id": "geometry-dash-gemini-3.5", "benchmark": "geometry-dash", "model": "gemini-3.5", "tool": "none", "date": "2026-07-10", "editorScores": null }
+]

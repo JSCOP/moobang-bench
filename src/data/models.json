@@ -1,0 +1,9 @@
+[
+  { "id": "claude-fable-5", "name": "Claude Fable 5", "vendor": "Anthropic" },
+  { "id": "gpt-5.6-sol", "name": "GPT-5.6 SOL", "vendor": "OpenAI" },
+  { "id": "gemini-3.5", "name": "Gemini 3.5", "vendor": "Google" },
+  { "id": "claude-opus", "name": "Claude Opus", "vendor": "Anthropic" },
+  { "id": "glm", "name": "GLM", "vendor": "Zhipu AI" },
+  { "id": "kimi", "name": "Kimi", "vendor": "Moonshot AI" },
+  { "id": "deepseek", "name": "DeepSeek", "vendor": "DeepSeek" }
+]

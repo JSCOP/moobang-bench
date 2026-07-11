@@ -1,0 +1,10 @@
+[
+  { "id": "opencode", "name": "OpenCode", "homepage": "https://opencode.ai", "description": "Open-source AI coding agent." },
+  { "id": "claude-code", "name": "Claude Code", "homepage": "https://claude.com/product/claude-code", "description": "Anthropic's agentic coding tool." },
+  { "id": "codex-cli", "name": "Codex CLI", "homepage": "https://github.com/openai/codex", "description": "OpenAI's terminal coding agent." },
+  { "id": "oh-my-pi", "name": "Oh My Pi", "description": "Agent harness for coding workflows." },
+  { "id": "pi-agent", "name": "Pi Agent", "description": "Agentic coding tool." },
+  { "id": "cline", "name": "Cline", "homepage": "https://cline.bot", "description": "AI coding agent for editors." },
+  { "id": "cursor", "name": "Cursor", "homepage": "https://cursor.com", "description": "AI-powered code editor." },
+  { "id": "none", "name": "Direct model", "description": "Model used directly without an agent tool." }
+]

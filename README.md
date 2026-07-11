@@ -1,56 +1,59 @@
-# Welcome to your Expo app 👋
+# MoobangBench
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Public Expo Router static site for comparing live AI coding benchmark artifacts. Community voting runs on Cloudflare Pages Functions with D1.
 
-## Get started
+## Local development
 
-1. Install dependencies
+Requirements: Node.js 20+, npm, and a local `.dev.vars` file containing `VOTE_SALT=dev-salt`.
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+npm install
+npm run check:data
+npm run build
+npm run db:migrate:local
+npm run preview:cf
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Open `http://127.0.0.1:8788`. `npm run dev` runs the UI without Pages Functions.
 
-### Other setup steps
+## Cloudflare deployment
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+1. Authenticate and create the database:
+   ```sh
+   npx wrangler login
+   npx wrangler d1 create moobangbench
+   ```
+2. Replace `PLACEHOLDER` in `wrangler.toml` with the returned D1 database id.
+3. Apply the production schema:
+   ```sh
+   npm run db:migrate:remote
+   ```
+4. Push the repository to GitHub. In Cloudflare Pages, connect the repository with build command `npm run build` and output directory `dist`.
+5. Configure the vote salt:
+   ```sh
+   npx wrangler pages secret put VOTE_SALT --project-name moobangbench
+   ```
 
-## Learn more
+## Domain
 
-To learn more about developing your project with Expo, look at the following resources:
+Buy `moobangbench.ai` from a registrar supporting `.ai`, add the site to Cloudflare, update the registrar nameservers, then add `moobangbench.ai` and `www.moobangbench.ai` under Pages custom domains. `public/_redirects` sends `www` to the apex domain.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## AdSense
 
-## Join the community
+After the live domain is approved:
 
-Join our community of developers creating universal apps.
+1. Set `EXPO_PUBLIC_ADSENSE_CLIENT` in Cloudflare Pages build environment variables.
+2. Replace the placeholder publisher id in `public/ads.txt`.
+3. Replace the placeholder slot ids passed to `AdSlot` in `app/_layout.tsx`, `app/benchmarks/[id].tsx`, and `app/results/[id].tsx`.
+4. Enable AdSense's EU consent message in the AdSense console.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Without `EXPO_PUBLIC_ADSENSE_CLIENT`, stable-layout ad placeholders render and the AdSense script is not loaded.
+
+## Add benchmark content
+
+1. Copy an artifact to `public/demos/<result-id>/`. Multi-file demos are supported.
+2. Add the benchmark, model, or tool to its JSON file in `src/data/` when first introduced.
+3. Append the result to `src/data/results.json`.
+4. Run `npm run check:data` and `npm run build`, then push. Cloudflare Pages deploys the update.
+
+Editor scores are the one-decimal mean of functionality, code quality, polish, and performance. Leave `editorScores` as `null` until reviewed.

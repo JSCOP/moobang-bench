@@ -1,0 +1,3165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Geometry Dash AI Auto-Player</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05050f;
+            font-family: 'Courier New', Courier, monospace;
+            color: #ffffff;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #0a0a1a;
+        }
+        /* HUD overlay */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000;
+            font-weight: bold;
+        }
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-size: 18px;
+        }
+        .hud-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 16px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 2px solid currentColor;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        /* Menus */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 26, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            color: #00ffff;
+        }
+        h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #ff007f;
+            text-shadow: 0 0 10px #ff007f;
+        }
+        .btn {
+            background: #111133;
+            border: 3px solid #00ffff;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 12px 24px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            transition: all 0.2s ease;
+            margin: 10px;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #00ffff;
+            color: #0a0a1a;
+            box-shadow: 0 0 20px #00ffff;
+            transform: scale(1.05);
+        }
+        .btn-red {
+            border-color: #ff0055;
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+        }
+        .btn-red:hover {
+            background: #ff0055;
+            color: #ffffff;
+            box-shadow: 0 0 20px #ff0055;
+        }
+        /* Difficulty Grid */
+        .diff-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            margin: 20px 0;
+        }
+        @media (max-width: 600px) {
+            .diff-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            h1 { font-size: 32px; }
+        }
+        .diff-card {
+            background: #15152a;
+            border: 3px solid #333355;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .diff-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+        }
+        .diff-card.selected {
+            border-color: currentColor;
+            box-shadow: 0 0 15px currentColor;
+            background: #202040;
+        }
+        .diff-icon {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+        .diff-name {
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .diff-stars {
+            color: #ffd700;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        /* Colors for difficulties */
+        .diff-easy { color: #00bfff; }
+        .diff-normal { color: #00ff7f; }
+        .diff-hard { color: #ff8c00; }
+        .diff-harder { color: #ff4500; }
+        .diff-insane { color: #ba55d3; }
+        .diff-demon { color: #ff0000; }
+
+        /* Progress Bar */
+        #progress-container {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #555;
+            border-radius: 6px;
+            overflow: hidden;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            box-shadow: 0 0 8px #00ffff;
+            transition: width 0.1s linear;
+        }
+        /* Settings panel */
+        #settings-panel {
+            margin-top: 15px;
+            background: rgba(0,0,0,0.4);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .setting-toggle {
+            font-size: 12px;
+            padding: 5px 10px;
+            background: #222244;
+            border: 1px solid #555;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .setting-toggle.active {
+            background: #00ff88;
+            color: #000;
+            border-color: #00ff88;
+            font-weight: bold;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            background: #222244;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+        }
+        .volume-control input {
+            cursor: pointer;
+        }
+        /* Audio unlock screen */
+        #audio-unlock-overlay {
+            background: #050510;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Canvas for rendering -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Audio Unlock Overlay (First interaction) -->
+        <div id="audio-unlock-overlay" class="overlay">
+            <h1>GEOMETRY DASH AI</h1>
+            <p style="margin-bottom: 20px; font-size: 16px; color: #aaa;">Click anywhere to initialize Web Audio and Start Game</p>
+            <button class="btn" id="unlock-btn">INITIALIZE GAME</button>
+        </div>
+
+        <!-- Main Menu Overlay -->
+        <div id="main-menu" class="overlay hidden">
+            <h1>GEOMETRY DASH AI</h1>
+            <h2>SELECT DIFFICULTY</h2>
+            <div class="diff-grid" id="difficulty-grid">
+                <!-- Javascript will populate this -->
+            </div>
+            
+            <div id="settings-panel">
+                <button class="setting-toggle active" id="toggle-ai-menu">AI AUTO-PLAY: ON [A]</button>
+                <button class="setting-toggle active" id="toggle-sound-menu">SOUNDS: ON [M]</button>
+                <button class="setting-toggle active" id="toggle-seed-menu">SEED: SHOW [S]</button>
+                <button class="setting-toggle" id="toggle-fps-menu">FPS: HIDE [F]</button>
+                <div class="volume-control">
+                    <span>VOL:</span>
+                    <input type="range" id="volume-slider" min="0" max="100" value="50" style="width: 80px;">
+                </div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <button class="btn" id="start-btn">START RUN</button>
+            </div>
+        </div>
+
+        <!-- Death Overlay -->
+        <div id="death-screen" class="overlay hidden">
+            <h1 style="color: #ff0055; text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055;">GAME OVER</h1>
+            <h2 id="death-stats" style="color: #ffffff; text-shadow: none;">Attempt 1 | 0 meters</h2>
+            <div style="margin: 20px 0;">
+                <button class="btn" id="restart-btn">RETRY [R]</button>
+                <button class="btn btn-red" id="menu-btn">MAIN MENU [ESC]</button>
+            </div>
+            <p style="font-size: 12px; color: #888;">AI Mode: <span id="death-ai-status">ON</span> | Seed: <span id="death-seed-val">12345</span></p>
+        </div>
+
+        <!-- HUD elements -->
+        <div id="hud" class="hidden">
+            <div class="hud-top">
+                <div>
+                    <div>ATTEMPT <span id="hud-attempt">1</span></div>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 4px;">MODE: <span id="hud-mode" style="color: #00ffff;">CUBE</span></div>
+                </div>
+                <div style="text-align: right;">
+                    <div id="hud-score">0m</div>
+                    <div id="hud-coins" style="font-size: 12px; color: #ffd700; margin-top: 4px;">COINS: 0/3</div>
+                </div>
+            </div>
+
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+
+            <div class="hud-bottom">
+                <div>
+                    <div>AI: <span id="hud-ai-status" style="color: #00ff88;">ON</span></div>
+                    <div style="font-size: 10px; color: #888; margin-top: 2px;">PRESS [A] TO TOGGLE AI</div>
+                </div>
+                <div style="text-align: right;">
+                    <div id="hud-fps" style="font-size: 12px; color: #888;">60 FPS</div>
+                    <div id="hud-seed" style="font-size: 10px; color: #888; margin-top: 2px;">SEED: 12345</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Geometry Dash-style auto-playing game inside a single script tag
+// All JS classes, game engine, and systems will be initialized and bound to the UI.
+
+// Global Config & Difficulties
+const DIFFICULTIES = {
+    EASY: { id: 'EASY', name: 'Easy', stars: 2, icon: '😊', color: '#00bfff', speed: 380, density: 0.35, sizeGap: 180, timingGrace: 18, obstacleTypes: ['spike', 'saw'], jumpRange: 320, aiLookahead: 1200 },
+    NORMAL: { id: 'NORMAL', name: 'Normal', stars: 4, icon: '😌', color: '#00ff7f', speed: 450, density: 0.5, sizeGap: 150, timingGrace: 14, obstacleTypes: ['spike', 'saw', 'pad', 'orb'], jumpRange: 420, aiLookahead: 1000 },
+    HARD: { id: 'HARD', name: 'Hard', stars: 6, icon: '😟', color: '#ff8c00', speed: 520, density: 0.65, sizeGap: 120, timingGrace: 11, obstacleTypes: ['spike', 'saw', 'pad', 'orb', 'moving_spike', 'fake_spike'], jumpRange: 500, aiLookahead: 850 },
+    HARDER: { id: 'HARDER', name: 'Harder', stars: 8, icon: '😰', color: '#ff4500', speed: 580, density: 0.75, sizeGap: 100, timingGrace: 8, obstacleTypes: ['spike', 'saw', 'pad', 'orb', 'moving_spike', 'fake_spike', 'crumbling', 'moving_platform', 'invisible_spike'], jumpRange: 550, aiLookahead: 750 },
+    INSANE: { id: 'INSANE', name: 'Insane', stars: 9, icon: '👿', color: '#ba55d3', speed: 640, density: 0.85, sizeGap: 80, timingGrace: 6, obstacleTypes: ['spike', 'saw', 'pad', 'orb', 'moving_spike', 'fake_spike', 'crumbling', 'moving_platform', 'invisible_spike', 'dash_orb', 'gravity_well'], jumpRange: 600, aiLookahead: 650 },
+    DEMON: { id: 'DEMON', name: 'Extreme Demon', stars: 10, icon: '👹', color: '#ff0000', speed: 720, density: 0.95, sizeGap: 65, timingGrace: 3, obstacleTypes: ['spike', 'saw', 'pad', 'orb', 'moving_spike', 'fake_spike', 'crumbling', 'moving_platform', 'invisible_spike', 'dash_orb', 'gravity_well'], jumpRange: 680, aiLookahead: 550 }
+};
+
+// Seed-based Pseudo-Random Number Generator (PRNG)
+class SeededRandom {
+    constructor(seed) {
+        this.seed = seed;
+    }
+    next() {
+        // LCG (Linear Congruential Generator)
+        this.seed = (this.seed * 1664525 + 1013904223) % 4294967296;
+        return this.seed / 4294967296;
+    }
+    range(min, max) {
+        return min + this.next() * (max - min);
+    }
+    choose(arr) {
+        return arr[Math.floor(this.next() * arr.length)];
+    }
+}
+
+// Particle System for visual feedback
+class Particle {
+    constructor(x, y, vx, vy, color, size, life, type = 'square') {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.size = size;
+        this.maxLife = life;
+        this.life = life;
+        this.type = type; // 'square', 'circle', 'glow', 'star'
+    }
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.life -= dt;
+    }
+    draw(ctx) {
+        let alpha = Math.max(0, this.life / this.maxLife);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = this.type === 'glow' ? 10 : 0;
+        
+        ctx.beginPath();
+        if (this.type === 'circle' || this.type === 'glow') {
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.type === 'star') {
+            // Simple 4-point star
+            ctx.moveTo(this.x, this.y - this.size);
+            ctx.lineTo(this.x + this.size * 0.3, this.y - this.size * 0.3);
+            ctx.lineTo(this.x + this.size, this.y);
+            ctx.lineTo(this.x + this.size * 0.3, this.y + this.size * 0.3);
+            ctx.lineTo(this.x, this.y + this.size);
+            ctx.lineTo(this.x - this.size * 0.3, this.y + this.size * 0.3);
+            ctx.lineTo(this.x - this.size, this.y);
+            ctx.lineTo(this.x - this.size * 0.3, this.y - this.size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+        } else {
+            ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+        }
+        ctx.restore();
+    }
+}
+
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+    }
+    add(x, y, vx, vy, color, size, life, type) {
+        this.particles.push(new Particle(x, y, vx, vy, color, size, life, type));
+    }
+    spawnExplosion(x, y, color, count = 20) {
+        for (let i = 0; i < count; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 200 + 50;
+            this.add(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, color, Math.random() * 6 + 2, Math.random() * 0.5 + 0.3, 'square');
+        }
+    }
+    spawnTrail(x, y, color, size) {
+        this.add(x, y, -50 - Math.random() * 50, (Math.random() - 0.5) * 40, color, size, Math.random() * 0.3 + 0.1, 'circle');
+    }
+    spawnOrbCollect(x, y, color) {
+        for (let i = 0; i < 15; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 120 + 30;
+            this.add(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, color, Math.random() * 4 + 2, Math.random() * 0.4 + 0.2, 'star');
+        }
+    }
+    spawnPortalEntry(x, y, color) {
+        for (let i = 0; i < 12; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 80 + 20;
+            this.add(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, color, Math.random() * 5 + 3, Math.random() * 0.6 + 0.2, 'glow');
+        }
+    }
+    update(dt) {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update(dt);
+            if (this.particles[i].life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
+    }
+    draw(ctx) {
+        for (let p of this.particles) {
+            p.draw(ctx);
+        }
+    }
+}
+
+
+// Player physics, movement modes, state machine, and size/gravity configurations
+const GAME_MODES = {
+    CUBE: 'CUBE',
+    SHIP: 'SHIP',
+    UFO: 'UFO',
+    WAVE: 'WAVE',
+    BALL: 'BALL',
+    ROBOT: 'ROBOT',
+    SPIDER: 'SPIDER'
+};
+
+const MODE_PROPERTIES = {
+    CUBE: { color: '#00ffff', size: 30 },
+    SHIP: { color: '#00ff00', size: 30 },
+    UFO: { color: '#ffaa00', size: 30 },
+    WAVE: { color: '#ff00aa', size: 16 },
+    BALL: { color: '#ff3333', size: 30 },
+    ROBOT: { color: '#a0a0a0', size: 30 },
+    SPIDER: { color: '#aa00ff', size: 30 }
+};
+
+class Player {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = 450; // Modified dynamically by speed portals
+        this.vy = 0;
+        this.mode = GAME_MODES.CUBE;
+        this.sizeMultiplier = 1.0; // Shrinks to 0.5 in mini mode
+        this.gravitySign = 1; // 1 = normal, -1 = inverted
+        
+        // Physics constants
+        this.gravityVal = 1400; // Base gravity (pixels/s^2)
+        this.terminalVelocity = 900;
+        this.jumpForce = -420;
+        
+        // Mode-specific state trackers
+        this.ufoHopsRemaining = 3;
+        this.robotJumpTimer = 0;
+        this.isGrounded = false;
+        this.rotation = 0;
+        this.trailTimer = 0;
+        this.doubleJumpUsed = false; // Cube double jump
+        this.waveDirection = 1;      // Wave direction switches on input tap
+        this.prevInputPressed = false;
+        // Dual mode state tracking
+        this.isDual = false;
+        this.dualPartner = null;
+        this.isPartner = false; // Is this player the second clone?
+        
+        // Reverse gravity duration (Blue bounce pad reverses temporarily)
+        this.tempGravityTimer = 0;
+        this.isTempGravity = false;
+    }
+
+    get width() {
+        return MODE_PROPERTIES[this.mode].size * this.sizeMultiplier;
+    }
+
+    get height() {
+        return MODE_PROPERTIES[this.mode].size * this.sizeMultiplier;
+    }
+
+    get color() {
+        return MODE_PROPERTIES[this.mode].color;
+    }
+
+    clone() {
+        let p = new Player(this.x, this.y);
+        p.vx = this.vx;
+        p.vy = this.vy;
+        p.mode = this.mode;
+        p.sizeMultiplier = this.sizeMultiplier;
+        p.gravitySign = -this.gravitySign; // Dual matches are inverted
+        p.isDual = false;
+        p.isPartner = true;
+        return p;
+    }
+
+    update(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine, particleSystem) {
+        // Handle temp gravity reversion timer (anti-gravity blue pad duration)
+        if (this.isTempGravity) {
+            this.tempGravityTimer -= dt;
+            if (this.tempGravityTimer <= 0) {
+                this.isTempGravity = false;
+                this.gravitySign = -this.gravitySign;
+                if (soundEngine) soundEngine.playSFX('gravity');
+            }
+        }
+
+        // Apply mode-specific physics
+        switch (this.mode) {
+            case GAME_MODES.CUBE:
+                this.updateCube(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+            case GAME_MODES.SHIP:
+                this.updateShip(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+            case GAME_MODES.UFO:
+                this.updateUFO(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+            case GAME_MODES.WAVE:
+                this.updateWave(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+            case GAME_MODES.BALL:
+                this.updateBall(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+            case GAME_MODES.ROBOT:
+                this.updateRobot(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+            case GAME_MODES.SPIDER:
+                this.updateSpider(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine);
+                break;
+        }
+
+        // Move horizontally
+        this.x += this.vx * dt;
+
+        // Visual effects (Trail)
+        if (particleSystem) {
+            this.trailTimer += dt;
+            if (this.trailTimer > 0.03) {
+                this.trailTimer = 0;
+                particleSystem.spawnTrail(this.x, this.y + this.height / 2, this.color, this.width * 0.3);
+            }
+        }
+    }
+
+    updateCube(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        let gravity = this.gravityVal * this.gravitySign;
+        this.vy += gravity * dt;
+        
+        // Terminal velocity check
+        if (Math.abs(this.vy) > this.terminalVelocity) {
+            this.vy = Math.sign(this.vy) * this.terminalVelocity;
+        }
+
+        this.y += this.vy * dt;
+
+        // Ground & Ceiling Collision detection
+        this.checkVerticalBounds(floorY, ceilingY);
+
+        if (this.isGrounded) {
+            this.rotation = Math.round(this.rotation / 90) * 90; // Snap to nearest 90-deg angle on landing
+            this.doubleJumpUsed = false; // Reset double jump
+            if (inputPressed || inputHeld) {
+                this.vy = this.jumpForce * this.gravitySign;
+                this.isGrounded = false;
+                if (soundEngine) soundEngine.playSFX('jump_cube');
+            }
+        } else {
+            // Check double jump
+            if (inputPressed && !this.doubleJumpUsed) {
+                this.vy = this.jumpForce * this.gravitySign;
+                this.doubleJumpUsed = true;
+                if (soundEngine) soundEngine.playSFX('jump_cube');
+            }
+            // Spin visual in air
+            this.rotation += 360 * dt * this.gravitySign;
+        }
+    }
+
+    updateShip(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        // Flying mechanics with momentum
+        let thrust = 2000;
+        let gravity = this.gravityVal * 0.5 * this.gravitySign;
+        
+        if (inputHeld) {
+            this.vy -= thrust * dt * this.gravitySign;
+        } else {
+            this.vy += gravity * dt;
+        }
+
+        // Apply friction/drag in Y direction
+        this.vy *= Math.pow(0.98, dt * 60);
+
+        // Terminal velocity check
+        let termVel = this.terminalVelocity * 0.7;
+        if (Math.abs(this.vy) > termVel) {
+            this.vy = Math.sign(this.vy) * termVel;
+        }
+
+        this.y += this.vy * dt;
+        this.checkVerticalBounds(floorY, ceilingY);
+
+        // Rotation based on Y-velocity
+        this.rotation = Math.atan2(this.vy, this.vx) * (180 / Math.PI) * 0.5;
+        if (this.gravitySign === -1) {
+            this.rotation = -this.rotation;
+        }
+    }
+
+    updateUFO(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        let gravity = this.gravityVal * 0.85 * this.gravitySign;
+        this.vy += gravity * dt;
+
+        // UFO gets terminal velocity
+        if (Math.abs(this.vy) > this.terminalVelocity) {
+            this.vy = Math.sign(this.vy) * this.terminalVelocity;
+        }
+
+        this.y += this.vy * dt;
+        this.checkVerticalBounds(floorY, ceilingY);
+
+        if (this.isGrounded) {
+            this.ufoHopsRemaining = 3;
+            this.rotation = 0;
+            if (inputPressed) {
+                this.vy = this.jumpForce * 0.9 * this.gravitySign;
+                this.isGrounded = false;
+                this.ufoHopsRemaining--;
+                if (soundEngine) soundEngine.playSFX('jump_ufo');
+            }
+        } else {
+            if (inputPressed && this.ufoHopsRemaining > 0) {
+                this.vy = this.jumpForce * 0.9 * this.gravitySign;
+                this.ufoHopsRemaining--;
+                if (soundEngine) soundEngine.playSFX('jump_ufo');
+            }
+            this.rotation += 180 * dt * this.gravitySign;
+        }
+    }
+
+    updateWave(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        // Moves strictly diagonally up/down. Specs: "input instantly switches the wave direction"
+        // Let's toggle waveDirection on inputPressed
+        if (inputPressed) {
+            this.waveDirection = -this.waveDirection;
+            if (soundEngine) soundEngine.playSFX('wave_sweep');
+        }
+
+        let targetAngle = 45;
+        let speedY = this.vx * Math.tan(targetAngle * Math.PI / 180);
+        this.vy = speedY * this.waveDirection * this.gravitySign;
+
+        this.y += this.vy * dt;
+        this.checkVerticalBounds(floorY, ceilingY);
+
+        // Rotation matches the diagonal slash direction
+        this.rotation = Math.atan2(this.vy, this.vx) * (180 / Math.PI);
+        if (this.gravitySign === -1) {
+            this.rotation = -this.rotation;
+        }
+    }
+
+    updateBall(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        let gravity = this.gravityVal * this.gravitySign;
+        this.vy += gravity * dt;
+        this.y += this.vy * dt;
+
+        let wasGrounded = this.isGrounded;
+        this.checkVerticalBounds(floorY, ceilingY);
+
+        // Specs: "automatically switches gravity when touching the ground or ceiling, tap flips gravity manually."
+        if (this.isGrounded && !wasGrounded) {
+            // Auto flip gravity when we land or hit ceiling
+            this.gravitySign = -this.gravitySign;
+            if (soundEngine) soundEngine.playSFX('gravity');
+        } else if (inputPressed) {
+            // Manual flip
+            this.gravitySign = -this.gravitySign;
+            if (soundEngine) soundEngine.playSFX('gravity');
+        }
+
+        // Rotate while rolling
+        this.rotation += 270 * dt * this.gravitySign;
+    }
+
+    updateRobot(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        let gravity = this.gravityVal * 1.2 * this.gravitySign; // Slower fall/heavier
+        this.vy += gravity * dt;
+        this.y += this.vy * dt;
+        this.checkVerticalBounds(floorY, ceilingY);
+
+        // Robot features variable height jumps
+        if (this.isGrounded) {
+            this.rotation = 0;
+            if (inputPressed) {
+                this.vy = this.jumpForce * 1.15 * this.gravitySign;
+                this.robotJumpTimer = 0.22; // Allow holding for 0.22 seconds to go higher
+                this.isGrounded = false;
+                if (soundEngine) soundEngine.playSFX('jump_robot');
+            }
+        } else {
+            if (inputHeld && this.robotJumpTimer > 0) {
+                this.vy += this.jumpForce * 0.9 * dt * this.gravitySign;
+                this.robotJumpTimer -= dt;
+            } else {
+                this.robotJumpTimer = 0;
+            }
+        }
+    }
+
+    updateSpider(dt, inputHeld, inputPressed, floorY, ceilingY, soundEngine) {
+        // Spider teleports instantly to ceiling/floor
+        if (inputPressed) {
+            if (this.gravitySign === 1) {
+                // Currently normal gravity, teleport up to ceiling if on floor
+                if (this.isGrounded) {
+                    this.y = ceilingY + this.height; // Instantly place on ceiling
+                    this.gravitySign = -1;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                    if (soundEngine) soundEngine.playSFX('jump_spider');
+                }
+            } else {
+                // Currently reverse gravity, teleport down to floor if on ceiling
+                if (this.isGrounded) {
+                    this.y = floorY - this.height;
+                    this.gravitySign = 1;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                    if (soundEngine) soundEngine.playSFX('jump_spider');
+                }
+            }
+        }
+
+        // Just regular bounds checks to make sure we lock to platforms
+        this.checkVerticalBounds(floorY, ceilingY);
+    }
+
+    checkVerticalBounds(floorY, ceilingY) {
+        let h = this.height;
+        this.isGrounded = false;
+        
+        if (this.gravitySign === 1) {
+            // Normal gravity - collide with floor
+            if (this.y + h >= floorY) {
+                this.y = floorY - h;
+                this.vy = 0;
+                this.isGrounded = true;
+            }
+            // Collide with ceiling if we bounce too high
+            if (this.y <= ceilingY) {
+                this.y = ceilingY;
+                this.vy = 0;
+            }
+        } else {
+            // Inverted gravity - collide with ceiling
+            if (this.y <= ceilingY) {
+                this.y = ceilingY;
+                this.vy = 0;
+                this.isGrounded = true;
+            }
+            // Collide with floor
+            if (this.y + h >= floorY) {
+                this.y = floorY - h;
+                this.vy = 0;
+            }
+        }
+    }
+
+    // Handles bouncing pads & orbs interactions
+    triggerBouncePad(padType, soundEngine) {
+        // padType: 'yellow' (normal bounce), 'red' (strong bounce), 'blue' (anti-gravity)
+        if (padType === 'yellow') {
+            this.vy = this.jumpForce * 1.35 * this.gravitySign;
+            this.isGrounded = false;
+            if (soundEngine) soundEngine.playSFX('bounce');
+        } else if (padType === 'red') {
+            this.vy = this.jumpForce * 1.8 * this.gravitySign;
+            this.isGrounded = false;
+            if (soundEngine) soundEngine.playSFX('bounce');
+        } else if (padType === 'blue') {
+            // Anti-gravity bounce: flip gravity instantly AND launch upward slightly
+            this.gravitySign = -this.gravitySign;
+            this.vy = this.jumpForce * 0.8 * this.gravitySign;
+            this.isGrounded = false;
+            
+            // Set temporal countdown to revert gravity back in 1.5 seconds
+            this.isTempGravity = true;
+            this.tempGravityTimer = 1.5;
+            if (soundEngine) soundEngine.playSFX('gravity');
+        }
+    }
+
+    triggerOrb(orbType, soundEngine) {
+        // orbType: 'blue' (jump on touch/tap), 'green' (reverse gravity), 'pink' (dash up), 'yellow' (small hop)
+        if (orbType === 'blue') {
+            this.vy = this.jumpForce * 1.2 * this.gravitySign;
+            this.isGrounded = false;
+            if (soundEngine) soundEngine.playSFX('orb');
+        } else if (orbType === 'green') {
+            this.gravitySign = -this.gravitySign;
+            this.vy = this.jumpForce * 0.6 * this.gravitySign;
+            this.isGrounded = false;
+            if (soundEngine) soundEngine.playSFX('gravity');
+        } else if (orbType === 'pink') {
+            // Dash upward instantly with velocity burst
+            this.vy = this.jumpForce * 1.6 * this.gravitySign;
+            this.isGrounded = false;
+            if (soundEngine) soundEngine.playSFX('orb');
+        } else if (orbType === 'yellow') {
+            this.vy = this.jumpForce * 0.7 * this.gravitySign;
+            this.isGrounded = false;
+            if (soundEngine) soundEngine.playSFX('orb');
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(this.rotation * Math.PI / 180);
+        
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 10;
+        
+        ctx.beginPath();
+        let w = this.width;
+        let h = this.height;
+
+        switch (this.mode) {
+            case GAME_MODES.CUBE:
+                // Square with inner detailing
+                ctx.fillRect(-w/2, -h/2, w, h);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-w/3, -h/3, w*2/3, h*2/3);
+                break;
+            case GAME_MODES.SHIP:
+                // Triangle ship pointing forward (to the right)
+                ctx.moveTo(-w/2, -h/2);
+                ctx.lineTo(w/2, 0);
+                ctx.lineTo(-w/2, h/2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                break;
+            case GAME_MODES.UFO:
+                // Flying saucer shape
+                ctx.ellipse(0, 0, w/2, h/3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, -h/6, w/4, 0, Math.PI, true);
+                ctx.fill();
+                break;
+            case GAME_MODES.WAVE:
+                // Diagonal dart shape
+                ctx.moveTo(-w/2, -h/4);
+                ctx.lineTo(w/2, 0);
+                ctx.lineTo(-w/2, h/4);
+                ctx.lineTo(-w/3, 0);
+                ctx.closePath();
+                ctx.fill();
+                break;
+            case GAME_MODES.BALL:
+                // Spiky gear/wheel ball
+                ctx.arc(0, 0, w/2, 0, Math.PI * 2);
+                ctx.fill();
+                // Draw inner details (lines)
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    let angle = i * Math.PI / 4;
+                    ctx.moveTo(Math.cos(angle) * w/2, Math.sin(angle) * w/2);
+                    ctx.lineTo(-Math.cos(angle) * w/2, -Math.sin(angle) * w/2);
+                }
+                ctx.stroke();
+                break;
+            case GAME_MODES.ROBOT:
+                // Gray square with a little antenna
+                ctx.fillRect(-w/2, -h/2, w, h);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-w/4, -h/3, w/2, h/2);
+                // Antenna
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -h/2);
+                ctx.lineTo(0, -h*0.7);
+                ctx.stroke();
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(0, -h*0.7, 3, 0, Math.PI*2);
+                ctx.fill();
+                break;
+            case GAME_MODES.SPIDER:
+                // Purple hexagon with spiky legs outline
+                for (let i = 0; i < 6; i++) {
+                    let angle = i * Math.PI / 3;
+                    ctx.lineTo(Math.cos(angle) * w/2, Math.sin(angle) * h/2);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                break;
+        }
+
+        ctx.restore();
+    }
+}
+
+
+// Obstacles, hazards, portals, bounce pads, and orb structures.
+// Includes speed portals, gravity portals, size portals, mirror portals, and dual portals.
+
+const PORTAL_TYPES = {
+    CUBE: 'portal_cube',       // Blue
+    SHIP: 'portal_ship',       // Green
+    UFO: 'portal_ufo',         // Orange
+    WAVE: 'portal_wave',       // Pink
+    BALL: 'portal_ball',       // Red
+    ROBOT: 'portal_robot',     // Gray
+    SPIDER: 'portal_spider',   // Purple
+    
+    GRAVITY_FLIP: 'portal_grav_flip',  // Cyan/Magenta swirl
+    GRAVITY_NORMAL: 'portal_grav_norm',
+    
+    SIZE_MINI: 'portal_size_mini',     // Green outline shrink
+    SIZE_NORMAL: 'portal_size_norm',   // Pink outline restore
+    
+    SPEED_SLOW: 'portal_speed_slow',   // 0.5x (yellow arrow)
+    SPEED_NORMAL: 'portal_speed_norm', // 1.0x (orange arrow)
+    SPEED_FAST: 'portal_speed_fast',   // 1.5x (green arrow)
+    
+    MIRROR: 'portal_mirror',           // flips horizontal layout visually
+    DUAL: 'portal_dual'                // duplicates player
+};
+
+const OBSTACLE_TYPES = {
+    SPIKE: 'spike',
+    SPIKE_CEILING: 'spike_ceiling',
+    MOVING_SPIKE: 'moving_spike',
+    SAW: 'saw',
+    FAKE_SPIKE: 'fake_spike',
+    INVISIBLE_SPIKE: 'invisible_spike',
+    CRUMBLING_PLATFORM: 'crumbling',
+    MOVING_PLATFORM: 'moving_platform',
+    GRAVITY_WELL: 'gravity_well',
+    BOUNCE_PAD_YELLOW: 'pad_yellow',
+    BOUNCE_PAD_RED: 'pad_red',
+    BOUNCE_PAD_BLUE: 'pad_blue',
+    ORB_BLUE: 'orb_blue',
+    ORB_GREEN: 'orb_green',
+    ORB_PINK: 'orb_pink',
+    ORB_YELLOW: 'orb_yellow',
+    DASH_ORB: 'dash_orb',
+    COIN: 'coin',
+    PLATFORM: 'platform'
+};
+
+class LevelObject {
+    constructor(type, x, y, w = 30, h = 30, config = {}) {
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        
+        // Custom properties based on obstacle configuration
+        this.speed = config.speed || 100;
+        this.range = config.range || 80;
+        this.direction = config.direction || 1; // 1 = up/right, -1 = down/left
+        this.axis = config.axis || 'y'; // 'x' or 'y'
+        this.initialX = x;
+        this.initialY = y;
+        this.angle = 0;
+        this.rpm = config.rpm || 120;
+        
+        // State trackers
+        this.timer = 0;
+        this.isCrumbling = false;
+        this.crumbleTimer = config.crumbleTime || 0.4;
+        this.opacity = 1.0;
+        this.isCollected = false;
+        this.hasActivated = false;
+    }
+
+    update(dt, playerX) {
+        this.timer += dt;
+
+        // Moving obstacle update logic
+        if (this.type === OBSTACLE_TYPES.MOVING_SPIKE || this.type === OBSTACLE_TYPES.MOVING_PLATFORM) {
+            let offset = Math.sin(this.timer * (this.speed / 40)) * this.range;
+            if (this.axis === 'y') {
+                this.y = this.initialY + offset;
+            } else {
+                this.x = this.initialX + offset;
+            }
+        }
+
+        // Rotating saw blade logic
+        if (this.type === OBSTACLE_TYPES.SAW) {
+            this.angle += (this.rpm * 360 / 60) * dt;
+        }
+
+        // Invisible spike fade logic
+        if (this.type === OBSTACLE_TYPES.INVISIBLE_SPIKE) {
+            this.opacity = 0.5 + 0.5 * Math.sin(this.timer * 4); // Fades in and out
+        }
+
+        // Crumbling platform logic
+        if (this.isCrumbling && this.type === OBSTACLE_TYPES.CRUMBLING_PLATFORM) {
+            this.crumbleTimer -= dt;
+            if (this.crumbleTimer <= 0) {
+                this.y += 600 * dt; // Fall down rapidly
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.isCollected) return;
+
+        ctx.save();
+        ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+        
+        // Apply glow effect on active elements
+        ctx.shadowColor = this.getGlowColor();
+        ctx.shadowBlur = this.getGlowBlur();
+        ctx.globalAlpha = this.opacity;
+
+        // Custom renderings per type
+        switch (this.type) {
+            case OBSTACLE_TYPES.SPIKE:
+            case OBSTACLE_TYPES.FAKE_SPIKE:
+                this.drawSpike(ctx, 1);
+                break;
+            case OBSTACLE_TYPES.SPIKE_CEILING:
+                this.drawSpike(ctx, -1);
+                break;
+            case OBSTACLE_TYPES.MOVING_SPIKE:
+                this.drawSpike(ctx, this.axis === 'y' ? 1 : -1, '#ff6600');
+                break;
+            case OBSTACLE_TYPES.INVISIBLE_SPIKE:
+                this.drawSpike(ctx, 1, '#ffffff');
+                break;
+            case OBSTACLE_TYPES.SAW:
+                ctx.rotate(this.angle * Math.PI / 180);
+                this.drawSaw(ctx);
+                break;
+            case OBSTACLE_TYPES.PLATFORM:
+                this.drawPlatform(ctx, '#00ffff');
+                break;
+            case OBSTACLE_TYPES.CRUMBLING_PLATFORM:
+                this.drawPlatform(ctx, this.isCrumbling ? '#ff3300' : '#ff9900');
+                break;
+            case OBSTACLE_TYPES.MOVING_PLATFORM:
+                this.drawPlatform(ctx, '#ff00aa');
+                break;
+            case OBSTACLE_TYPES.BOUNCE_PAD_YELLOW:
+                this.drawBouncePad(ctx, '#ffd700');
+                break;
+            case OBSTACLE_TYPES.BOUNCE_PAD_RED:
+                this.drawBouncePad(ctx, '#ff003c');
+                break;
+            case OBSTACLE_TYPES.BOUNCE_PAD_BLUE:
+                this.drawBouncePad(ctx, '#00bfff');
+                break;
+            case OBSTACLE_TYPES.ORB_BLUE:
+                this.drawOrb(ctx, '#00bfff');
+                break;
+            case OBSTACLE_TYPES.ORB_GREEN:
+                this.drawOrb(ctx, '#00ff7f');
+                break;
+            case OBSTACLE_TYPES.ORB_PINK:
+                this.drawOrb(ctx, '#ff00ff');
+                break;
+            case OBSTACLE_TYPES.ORB_YELLOW:
+                this.drawOrb(ctx, '#ffd700');
+                break;
+            case OBSTACLE_TYPES.DASH_ORB:
+                this.drawOrb(ctx, '#ff4500', true);
+                break;
+            case OBSTACLE_TYPES.GRAVITY_WELL:
+                this.drawGravityWell(ctx);
+                break;
+            case OBSTACLE_TYPES.COIN:
+                this.drawCoin(ctx);
+                break;
+            default:
+                if (this.type.startsWith('portal_')) {
+                    this.drawPortal(ctx);
+                }
+                break;
+        }
+
+        ctx.restore();
+    }
+
+    drawSpike(ctx, scaleY, color = null) {
+        let w = this.w;
+        let h = this.h;
+        ctx.fillStyle = color || (this.type === OBSTACLE_TYPES.FAKE_SPIKE ? '#33334d' : '#ff0055');
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(-w/2, h/2 * scaleY);
+        ctx.lineTo(0, -h/2 * scaleY);
+        ctx.lineTo(w/2, h/2 * scaleY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    drawSaw(ctx) {
+        let r = this.w / 2;
+        ctx.fillStyle = '#15152a';
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 3;
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw spikes around the perimeter of the saw
+        ctx.fillStyle = '#00ffff';
+        let teeth = 12;
+        for (let i = 0; i < teeth; i++) {
+            let angle = (i * Math.PI * 2) / teeth;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(angle) * r * 0.6, Math.sin(angle) * r * 0.6);
+            ctx.lineTo(Math.cos(angle + 0.1) * r * 0.95, Math.sin(angle + 0.1) * r * 0.95);
+            ctx.lineTo(Math.cos(angle + 0.2) * r * 0.6, Math.sin(angle + 0.2) * r * 0.6);
+            ctx.fill();
+        }
+    }
+
+    drawPlatform(ctx, color) {
+        let w = this.w;
+        let h = this.h;
+        ctx.fillStyle = '#0a0a20';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.fillRect(-w/2, -h/2, w, h);
+        ctx.strokeRect(-w/2, -h/2, w, h);
+        
+        // Glow stripe
+        ctx.fillStyle = color;
+        ctx.fillRect(-w/2, -h/2, w, 4);
+    }
+
+    drawBouncePad(ctx, color) {
+        let w = this.w;
+        let h = this.h;
+        ctx.fillStyle = color;
+        ctx.fillRect(-w/2, h/4, w, h/4);
+        
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-w/2, h/4, w, h/4);
+        
+        // Curved spring effect
+        ctx.beginPath();
+        ctx.arc(0, h/4, w/3, Math.PI, 0);
+        ctx.stroke();
+    }
+
+    drawOrb(ctx, color, isDash = false) {
+        let r = this.w / 2;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Pulsing ring
+        let pulse = 0.7 + 0.2 * Math.sin(this.timer * 8);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+
+        if (isDash) {
+            // Triangle indicating direction
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(-r/3, -r/3);
+            ctx.lineTo(r/2, 0);
+            ctx.lineTo(-r/3, r/3);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    drawGravityWell(ctx) {
+        let r = this.w / 2;
+        ctx.strokeStyle = '#8a2be2';
+        ctx.lineWidth = 2.5;
+        // Draw spiral/swirling particles
+        ctx.beginPath();
+        for (let i = 0; i < 30; i++) {
+            let angle = i * 0.4 + this.timer * 4;
+            let radius = r * (1 - i / 30);
+            ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        }
+        ctx.stroke();
+    }
+
+    drawCoin(ctx) {
+        let r = this.w / 2;
+        ctx.fillStyle = '#ffd700';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Draw the inner details (C character or star)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('C', 0, 0);
+    }
+
+    drawPortal(ctx) {
+        let w = this.w;
+        let h = this.h;
+        let color = this.getGlowColor();
+        
+        // Portal ring
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, w/2, h/2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Swirling inner particles
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+            let offsetAngle = i * (Math.PI / 2) + this.timer * 3;
+            ctx.ellipse(0, 0, w/4, h/3, offsetAngle, 0, Math.PI);
+        }
+        ctx.stroke();
+    }
+
+    getGlowColor() {
+        switch (this.type) {
+            case OBSTACLE_TYPES.SPIKE:
+            case OBSTACLE_TYPES.SPIKE_CEILING: return '#ff0055';
+            case OBSTACLE_TYPES.SAW: return '#00ffff';
+            case OBSTACLE_TYPES.COIN: return '#ffd700';
+            case OBSTACLE_TYPES.BOUNCE_PAD_YELLOW: return '#ffd700';
+            case OBSTACLE_TYPES.BOUNCE_PAD_RED: return '#ff003c';
+            case OBSTACLE_TYPES.BOUNCE_PAD_BLUE: return '#00bfff';
+            case OBSTACLE_TYPES.ORB_BLUE: return '#00bfff';
+            case OBSTACLE_TYPES.ORB_GREEN: return '#00ff7f';
+            case OBSTACLE_TYPES.ORB_PINK: return '#ff00ff';
+            case OBSTACLE_TYPES.ORB_YELLOW: return '#ffd700';
+            case OBSTACLE_TYPES.DASH_ORB: return '#ff4500';
+            case OBSTACLE_TYPES.GRAVITY_WELL: return '#ba55d3';
+            
+            // Portals
+            case PORTAL_TYPES.CUBE: return '#00ffff';
+            case PORTAL_TYPES.SHIP: return '#00ff00';
+            case PORTAL_TYPES.UFO: return '#ffaa00';
+            case PORTAL_TYPES.WAVE: return '#ff00aa';
+            case PORTAL_TYPES.BALL: return '#ff3333';
+            case PORTAL_TYPES.ROBOT: return '#a0a0a0';
+            case PORTAL_TYPES.SPIDER: return '#aa00ff';
+            
+            case PORTAL_TYPES.GRAVITY_FLIP: return '#ff00ff';
+            case PORTAL_TYPES.GRAVITY_NORMAL: return '#00ffff';
+            case PORTAL_TYPES.SIZE_MINI: return '#00ff7f';
+            case PORTAL_TYPES.SIZE_NORMAL: return '#ff007f';
+            case PORTAL_TYPES.SPEED_SLOW: return '#ffd700';
+            case PORTAL_TYPES.SPEED_NORMAL: return '#ffaa00';
+            case PORTAL_TYPES.SPEED_FAST: return '#00ff00';
+            default: return '#333333';
+        }
+    }
+
+    getGlowBlur() {
+        if (this.type.startsWith('portal_')) return 20;
+        if (this.type === OBSTACLE_TYPES.COIN) return 15;
+        if (this.type.includes('orb') || this.type.includes('pad')) return 12;
+        return 8;
+    }
+
+    // Handles hitboxes for character collision verification
+    getHitbox() {
+        // Spikes have triangular shape hitbox (smaller than full w/h)
+        if (this.type === OBSTACLE_TYPES.SPIKE || this.type === OBSTACLE_TYPES.SPIKE_CEILING || this.type === OBSTACLE_TYPES.MOVING_SPIKE || this.type === OBSTACLE_TYPES.INVISIBLE_SPIKE) {
+            return {
+                x: this.x + this.w * 0.15,
+                y: this.y + this.h * 0.2,
+                w: this.w * 0.7,
+                h: this.h * 0.7
+            };
+        }
+        
+        // Saws are circular. Approximating hitbox box for simplicity:
+        if (this.type === OBSTACLE_TYPES.SAW) {
+            return {
+                x: this.x + this.w * 0.15,
+                y: this.y + this.h * 0.15,
+                w: this.w * 0.7,
+                h: this.h * 0.7
+            };
+        }
+
+        // Portals require larger contact zone but lenient detection
+        if (this.type.startsWith('portal_')) {
+            return {
+                x: this.x,
+                y: this.y,
+                w: this.w,
+                h: this.h
+            };
+        }
+
+        // Platforms
+        return {
+            x: this.x,
+            y: this.y,
+            w: this.w,
+            h: this.h
+        };
+    }
+}
+
+
+// Procedural seed-based level chunk generator and themed set-pieces.
+// Uses SeededRandom to construct challenging sections scaled to chosen difficulty.
+
+class LevelGenerator {
+    constructor(seed, difficulty) {
+        this.seed = seed;
+        this.difficulty = difficulty;
+        this.random = new SeededRandom(seed);
+        this.lastX = 300; // Start building chunks after spawn zone
+        this.chunkWidth = 1000;
+        this.activeChunks = [];
+        this.coinsSpawned = 0;
+        this.baseFloorY = 500;
+        this.baseCeilingY = 100;
+    }
+
+    reset(seed, difficulty) {
+        this.seed = seed;
+        this.difficulty = difficulty;
+        this.random = new SeededRandom(seed);
+        this.lastX = 300;
+        this.activeChunks = [];
+        this.coinsSpawned = 0;
+    }
+
+    generateNextChunk() {
+        let diffConfig = DIFFICULTIES[this.difficulty];
+        // Specs: "Each chunk is 800-1200 pixels wide"
+        this.chunkWidth = Math.floor(this.random.range(800, 1200));
+        
+        let chunkX = this.lastX;
+        let mode = this.chooseThemeMode();
+        let chunkObjects = [];
+        
+        // Mode portal at the very start of the chunk
+        chunkObjects.push(new LevelObject('portal_' + mode.toLowerCase(), chunkX + 50, this.getPortalYForMode(mode), 40, 80));
+
+        // Place occasional size, speed, or horizontal mirror/dual portal
+        this.tryPlaceModifierPortals(chunkObjects, chunkX, diffConfig);
+
+        // Track how many coins we had before starting this chunk generation
+        let initialCoinsCount = this.coinsSpawned;
+
+        // Generate terrain blocks & obstacles inside this chunk
+        this.generateChunkContent(chunkObjects, chunkX, mode, diffConfig);
+
+        // Spawn a coin in the chunk if we haven't reached 3 coins limit for this level segment
+        this.trySpawnCoin(chunkObjects, chunkX, mode, diffConfig);
+
+        this.lastX += this.chunkWidth;
+        
+        let newChunk = {
+            x: chunkX,
+            width: this.chunkWidth,
+            mode: mode,
+            objects: chunkObjects
+        };
+
+        // Specs: "Ensure generated levels are always completable by the auto-play AI (validate each chunk by simulating AI playthrough before placing)"
+        let retries = 0;
+        let valid = this.validateChunk(newChunk, diffConfig);
+        
+        while (retries < 5 && !valid) {
+            // Rebuild chunk content, resetting any coin count additions from the failed attempt
+            this.coinsSpawned = initialCoinsCount;
+            chunkObjects = [];
+            chunkObjects.push(new LevelObject('portal_' + mode.toLowerCase(), chunkX + 50, this.getPortalYForMode(mode), 40, 80));
+            this.tryPlaceModifierPortals(chunkObjects, chunkX, diffConfig);
+            this.generateChunkContent(chunkObjects, chunkX, mode, diffConfig);
+            this.trySpawnCoin(chunkObjects, chunkX, mode, diffConfig);
+            newChunk.objects = chunkObjects;
+            valid = this.validateChunk(newChunk, diffConfig);
+            retries++;
+        }
+        
+        // Absolute fallback: If all retries failed, empty the hazards from the chunk to ensure it's completable
+        if (!valid) {
+            this.coinsSpawned = initialCoinsCount;
+            chunkObjects = [];
+            // Keep only the mode portal at the start, making it a safe flat corridor
+            chunkObjects.push(new LevelObject('portal_' + mode.toLowerCase(), chunkX + 50, this.getPortalYForMode(mode), 40, 80));
+            newChunk.objects = chunkObjects;
+        }
+        
+        this.activeChunks.push(newChunk);
+        return newChunk;
+    }
+
+    validateChunk(chunk, diffConfig) {
+        // Run a lightweight simulation using the AI logic to check if a player survives the chunk
+        let testPlayer = new Player(chunk.x, 400);
+        testPlayer.mode = chunk.mode;
+        
+        let testAI = new GDAutoPlayAI();
+        let dt = 1/60;
+        let steps = Math.floor(chunk.width / (testPlayer.vx * dt));
+        let chunkList = [chunk];
+
+        for (let i = 0; i < steps; i++) {
+            let action = testAI.update(testPlayer, chunkList, this.baseFloorY, this.baseCeilingY, diffConfig);
+            testPlayer.update(dt, action.hold, action.press, this.baseFloorY, this.baseCeilingY, null, null);
+            
+            // Check collision with hazards
+            if (testAI.checkCollision(testPlayer, chunk.objects)) {
+                return false; // Crash! Not valid chunk.
+            }
+        }
+        return true; // Completed safely
+    }
+
+    chooseThemeMode() {
+        let allowedModes = [GAME_MODES.CUBE];
+        
+        if (this.difficulty === 'EASY') {
+            allowedModes = [GAME_MODES.CUBE, GAME_MODES.SHIP, GAME_MODES.BALL];
+        } else if (this.difficulty === 'NORMAL') {
+            allowedModes = [GAME_MODES.CUBE, GAME_MODES.SHIP, GAME_MODES.BALL, GAME_MODES.ROBOT];
+        } else {
+            allowedModes = Object.values(GAME_MODES); // All modes on Hard and above
+        }
+
+        return this.random.choose(allowedModes);
+    }
+
+    getPortalYForMode(mode) {
+        if (mode === GAME_MODES.SHIP || mode === GAME_MODES.WAVE || mode === GAME_MODES.UFO) {
+            return 250; // Air portals
+        }
+        return 420; // Grounded portals
+    }
+
+    tryPlaceModifierPortals(objects, startX, config) {
+        // Size portal
+        if (config.density > 0.5 && this.random.next() < 0.25) {
+            let portalType = this.random.next() < 0.5 ? PORTAL_TYPES.SIZE_MINI : PORTAL_TYPES.SIZE_NORMAL;
+            objects.push(new LevelObject(portalType, startX + 250, 420, 40, 80));
+        }
+
+        // Speed portal
+        if (this.random.next() < 0.2) {
+            let speedTypes = [PORTAL_TYPES.SPEED_SLOW, PORTAL_TYPES.SPEED_NORMAL, PORTAL_TYPES.SPEED_FAST];
+            let portalType = this.random.choose(speedTypes);
+            objects.push(new LevelObject(portalType, startX + 500, 300, 40, 80));
+        }
+
+        // Mirror & Dual portal (Harder difficulties only)
+        if (config.density >= 0.75) {
+            if (this.random.next() < 0.15) {
+                objects.push(new LevelObject(PORTAL_TYPES.DUAL, startX + 750, 250, 40, 80));
+            }
+            if (this.random.next() < 0.1) {
+                objects.push(new LevelObject(PORTAL_TYPES.MIRROR, startX + 850, 250, 40, 80));
+            }
+        }
+    }
+
+    generateChunkContent(objects, startX, mode, config) {
+        let density = config.density;
+        let spacing = config.sizeGap;
+        let currentX = startX + 150; // offset from portal
+        
+        while (currentX < startX + this.chunkWidth - 100) {
+            if (this.random.next() > density) {
+                currentX += spacing * 0.5;
+                continue;
+            }
+
+            // Spawn terrain depending on mode
+            switch (mode) {
+                case GAME_MODES.CUBE:
+                    this.spawnCubeSequence(objects, currentX, config);
+                    break;
+                case GAME_MODES.SHIP:
+                    this.spawnShipSequence(objects, currentX, config);
+                    break;
+                case GAME_MODES.UFO:
+                    this.spawnUFOSequence(objects, currentX, config);
+                    break;
+                case GAME_MODES.WAVE:
+                    this.spawnWaveSequence(objects, currentX, config);
+                    break;
+                case GAME_MODES.BALL:
+                    this.spawnBallSequence(objects, currentX, config);
+                    break;
+                case GAME_MODES.ROBOT:
+                    this.spawnRobotSequence(objects, currentX, config);
+                    break;
+                case GAME_MODES.SPIDER:
+                    this.spawnSpiderSequence(objects, currentX, config);
+                    break;
+            }
+
+            currentX += spacing;
+        }
+    }
+
+    spawnCubeSequence(objects, x, config) {
+        let type = this.random.next();
+        
+        if (type < 0.3) {
+            // Spike staircase or single spikes
+            objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x, 470, 30, 30));
+            if (this.random.next() < 0.5 && config.density > 0.4) {
+                objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 30, 470, 30, 30));
+            }
+        } else if (type < 0.6) {
+            // Platforms with spikes underneath
+            objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, 410, 90, 30));
+            objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 30, 380, 30, 30));
+        } else if (type < 0.8) {
+            // Orb / Bounce pad sequences
+            let orbType = this.random.choose([OBSTACLE_TYPES.ORB_BLUE, OBSTACLE_TYPES.ORB_YELLOW]);
+            objects.push(new LevelObject(orbType, x, 380, 30, 30));
+            objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 80, 470, 30, 30));
+        } else {
+            // Rotating saw blades or fake spikes (difficulty dependent)
+            if (config.obstacleTypes.includes('saw') && this.random.next() < 0.5) {
+                objects.push(new LevelObject(OBSTACLE_TYPES.SAW, x, 430, 60, 60));
+            } else {
+                objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x, 470, 30, 30));
+            }
+        }
+    }
+
+    spawnShipSequence(objects, x, config) {
+        // Tunnels requiring smooth vertical flying
+        let ceilingObstacleY = this.baseCeilingY;
+        let floorObstacleY = this.baseFloorY;
+
+        // Place pillars forming a tunnel gap
+        let gapSize = this.random.range(130, 220);
+        let gapCenter = this.random.range(200, 400);
+
+        // Ceiling pillar
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, 100, 60, gapCenter - gapSize/2 - 100));
+        // Spike hanging from ceiling platform
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE_CEILING, x + 15, gapCenter - gapSize/2, 30, 30));
+
+        // Floor pillar
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, gapCenter + gapSize/2, 60, 500 - (gapCenter + gapSize/2)));
+        // Spike sitting on floor platform
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 15, gapCenter + gapSize/2 - 30, 30, 30));
+    }
+
+    spawnUFOSequence(objects, x, config) {
+        // High/low spikes requiring flying hops
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x, 470, 30, 30));
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE_CEILING, x + 100, 100, 30, 30));
+        objects.push(new LevelObject(OBSTACLE_TYPES.ORB_BLUE, x + 50, 320, 30, 30));
+        
+        if (config.density > 0.6) {
+            objects.push(new LevelObject(OBSTACLE_TYPES.SAW, x + 150, 250, 50, 50));
+        }
+    }
+
+    spawnWaveSequence(objects, x, config) {
+        // Slanted zigzag obstacles matching 45 degree vertical speed
+        // Place narrow spaces
+        let center = this.random.range(220, 380);
+        
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, 100, 40, center - 70 - 100));
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE_CEILING, x + 5, center - 70, 30, 30));
+
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, center + 70, 40, 500 - (center + 70)));
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 5, center + 70 - 30, 30, 30));
+    }
+
+    spawnBallSequence(objects, x, config) {
+        // Ceiling and floor swap pathways
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x, 470, 30, 30));
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE_CEILING, x + 120, 100, 30, 30));
+        
+        if (this.random.next() < 0.4) {
+            objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x + 60, 280, 80, 20));
+            objects.push(new LevelObject(OBSTACLE_TYPES.BOUNCE_PAD_BLUE, x + 85, 280 - 15, 30, 15));
+        }
+    }
+
+    spawnRobotSequence(objects, x, config) {
+        // High ledges requiring variable jump holds
+        let ledgeHeight = this.random.range(120, 220);
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, 500 - ledgeHeight, 120, ledgeHeight));
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 10, 500 - ledgeHeight - 30, 30, 30));
+        
+        // Bounce pad on top of ledge
+        if (this.random.next() < 0.5) {
+            objects.push(new LevelObject(OBSTACLE_TYPES.BOUNCE_PAD_YELLOW, x + 70, 500 - ledgeHeight - 15, 30, 15));
+        }
+    }
+
+    spawnSpiderSequence(objects, x, config) {
+        // High pillars blocking the path requiring teleporting floor/ceiling
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x, 300, 40, 200)); // Blocks floor
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE_CEILING, x - 50, 100, 30, 30));
+        
+        // Next obstacle blocks ceiling, forcing teleport down
+        objects.push(new LevelObject(OBSTACLE_TYPES.PLATFORM, x + 160, 100, 40, 200)); // Blocks ceiling
+        objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, x + 110, 470, 30, 30));
+    }
+
+    trySpawnCoin(objects, chunkX, mode, config) {
+        if (this.coinsSpawned >= 3) return;
+
+        // Place coins in challenging optional high locations or in spike corridors
+        if (this.random.next() < 0.35) {
+            let coinX = chunkX + 400 + this.random.range(0, 300);
+            let coinY = 220; // Default air
+
+            if (mode === GAME_MODES.CUBE || mode === GAME_MODES.ROBOT) {
+                // High above a spike
+                coinY = 320;
+                objects.push(new LevelObject(OBSTACLE_TYPES.COIN, coinX, coinY, 30, 30));
+                objects.push(new LevelObject(OBSTACLE_TYPES.SPIKE, coinX, 470, 30, 30));
+            } else if (mode === GAME_MODES.SHIP || mode === GAME_MODES.WAVE) {
+                // Dangerous tunnel path
+                coinY = 160;
+                objects.push(new LevelObject(OBSTACLE_TYPES.COIN, coinX, coinY, 30, 30));
+                objects.push(new LevelObject(OBSTACLE_TYPES.SAW, coinX, coinY + 60, 40, 40));
+            } else {
+                objects.push(new LevelObject(OBSTACLE_TYPES.COIN, coinX, coinY, 30, 30));
+            }
+            this.coinsSpawned++;
+        }
+    }
+
+    cleanUpPassedChunks(playerX) {
+        // Discard chunks that are far behind the player (e.g. 1500 pixels back)
+        for (let i = this.activeChunks.length - 1; i >= 0; i--) {
+            let c = this.activeChunks[i];
+            if (c.x + c.width < playerX - 1000) {
+                this.activeChunks.splice(i, 1);
+            }
+        }
+    }
+}
+
+
+// Lookahead Simulation-based AI Controller
+// Raycasts and runs lookahead simulations to find survival actions for each mode.
+
+class GDAutoPlayAI {
+    constructor() {
+        this.detectionRange = 800; // Pixels ahead to scan
+        this.simSteps = 45;       // Number of future physics ticks to simulate (approx. 0.75 seconds)
+        this.simDt = 1/60;        // Timestep for internal simulation
+        
+        // Track visual trajectory for debugging overlay
+        this.predictedTrajectory = [];
+        this.detectionBox = { x: 0, y: 0, w: 0, h: 0 };
+    }
+
+    update(player, activeChunks, floorY, ceilingY, difficultyConfig) {
+        // Dynamic lookahead based on difficulty
+        this.detectionRange = difficultyConfig.aiLookahead;
+        
+        this.detectionBox = {
+            x: player.x,
+            y: ceilingY,
+            w: this.detectionRange,
+            h: floorY - ceilingY
+        };
+
+        // Gather all obstacles within the detection range
+        let obstacles = this.getUpcomingObstacles(player.x, activeChunks);
+
+        // Run simulations for different action paths: HOLD/TAP or RELEASE/NONE
+        let action = this.decideAction(player, obstacles, floorY, ceilingY);
+        
+        return action;
+    }
+
+    getUpcomingObstacles(playerX, activeChunks) {
+        let list = [];
+        for (let chunk of activeChunks) {
+            if (chunk.x + chunk.width < playerX) continue;
+            if (chunk.x > playerX + this.detectionRange) continue;
+            
+            for (let obj of chunk.objects) {
+                if (obj.x + obj.w >= playerX && obj.x <= playerX + this.detectionRange) {
+                    list.push(obj);
+                }
+            }
+        }
+        return list;
+    }
+
+    decideAction(player, obstacles, floorY, ceilingY) {
+        // Depending on game mode, simulate holding vs releasing
+        let mode = player.mode;
+
+        // Visual path calculation to draw trajectory line
+        this.predictedTrajectory = [];
+        
+        if (mode === GAME_MODES.WAVE) {
+            // Wave mode switches directions. We simulate holding and releasing.
+            // Check if staying on current direction collides. If so, switch.
+            let currentPathCollides = this.simulatePath(player, false, obstacles, floorY, ceilingY);
+            if (currentPathCollides) {
+                // Return inputPressed = true to toggle direction
+                return { hold: false, press: true };
+            }
+            return { hold: false, press: false };
+        }
+
+        if (mode === GAME_MODES.SHIP) {
+            // Ship mode needs continuous altitude adjustments.
+            // Check if no thrust collides. Check if thrust collides.
+            // Target the center of nearest tunnel openings.
+            let targetY = this.findSafeAltTarget(player, obstacles, floorY, ceilingY);
+            
+            // If current Y is below target (normal gravity) or above (inverted), apply thrust
+            let needThrust = false;
+            if (player.gravitySign === 1) {
+                needThrust = player.y + player.height / 2 > targetY;
+            } else {
+                needThrust = player.y + player.height / 2 < targetY;
+            }
+
+            // Populate visual predicted path
+            this.simulatePath(player, needThrust, obstacles, floorY, ceilingY, true);
+            return { hold: needThrust, press: false };
+        }
+
+        if (mode === GAME_MODES.BALL) {
+            // Ball switches gravity on tap.
+            // Simulate straight-line path. If it hits an obstacle, flip gravity.
+            let collidesWithoutFlip = this.simulatePath(player, false, obstacles, floorY, ceilingY, true);
+            if (collidesWithoutFlip) {
+                // Verify if flipping is safe
+                let clone = this.clonePlayerState(player);
+                clone.gravitySign = -clone.gravitySign;
+                let collidesWithFlip = this.simulatePath(clone, false, obstacles, floorY, ceilingY);
+                if (!collidesWithFlip) {
+                    return { hold: false, press: true };
+                }
+            }
+            return { hold: false, press: false };
+        }
+
+        if (mode === GAME_MODES.SPIDER) {
+            // Spider teleports instantly.
+            // Check for upcoming obstacles on the surface we are currently on.
+            let checkRange = 120; // Look slightly ahead
+            let imminentCollision = false;
+            for (let obs of obstacles) {
+                if (obs.type === OBSTACLE_TYPES.PLATFORM || obs.type.startsWith('portal_') || obs.type === OBSTACLE_TYPES.COIN) continue;
+                
+                // If obstacle is on the floor and player is on floor
+                if (player.gravitySign === 1 && obs.y + obs.h > floorY - 50 && obs.x < player.x + checkRange) {
+                    imminentCollision = true;
+                }
+                // If obstacle is on the ceiling and player is on ceiling
+                if (player.gravitySign === -1 && obs.y < ceilingY + 50 && obs.x < player.x + checkRange) {
+                    imminentCollision = true;
+                }
+            }
+            if (imminentCollision) {
+                return { hold: false, press: true };
+            }
+            return { hold: false, press: false };
+        }
+
+        // CUBE, UFO, ROBOT modes (ground or air hops)
+        // Check if doing nothing leads to a crash. If so, jump.
+        let noJumpCrash = this.simulatePath(player, false, obstacles, floorY, ceilingY, true);
+        if (noJumpCrash) {
+            // Run simulate with jump action to see if it clears the danger
+            let jumpClone = this.clonePlayerState(player);
+            // Simulate a jump trigger
+            if (jumpClone.isGrounded) {
+                jumpClone.vy = jumpClone.jumpForce * jumpClone.gravitySign;
+                jumpClone.isGrounded = false;
+            } else if (mode === GAME_MODES.UFO && jumpClone.ufoHopsRemaining > 0) {
+                jumpClone.vy = jumpClone.jumpForce * 0.9 * jumpClone.gravitySign;
+                jumpClone.ufoHopsRemaining--;
+            } else if (mode === GAME_MODES.CUBE && !jumpClone.doubleJumpUsed) {
+                jumpClone.vy = jumpClone.jumpForce * jumpClone.gravitySign;
+                jumpClone.doubleJumpUsed = true;
+            }
+
+            let jumpClears = !this.simulatePath(jumpClone, mode === GAME_MODES.ROBOT, obstacles, floorY, ceilingY);
+            if (jumpClears) {
+                return { hold: mode === GAME_MODES.ROBOT, press: true };
+            }
+        }
+
+        return { hold: false, press: false };
+    }
+
+    findSafeAltTarget(player, obstacles, floorY, ceilingY) {
+        // Scan ahead to find the vertical gap center of the nearest blockages
+        let nearestX = player.x + 300;
+        let nearestTunnel = null;
+
+        for (let obs of obstacles) {
+            if (obs.type === OBSTACLE_TYPES.PLATFORM) {
+                nearestTunnel = obs;
+                break;
+            }
+        }
+
+        if (nearestTunnel) {
+            // Find gap boundaries around this platform
+            // In a ship tunnel, platform is either ceiling or floor.
+            if (nearestTunnel.y < 250) {
+                // Platform is hanging, safe target is below it
+                return nearestTunnel.y + nearestTunnel.h + 80;
+            } else {
+                // Platform is floor base, safe target is above it
+                return nearestTunnel.y - 80;
+            }
+        }
+
+        return (floorY + ceilingY) / 2; // Default to mid-screen
+    }
+
+    simulatePath(player, inputHeld, obstacles, floorY, ceilingY, recordTrajectory = false) {
+        let tempPlayer = this.clonePlayerState(player);
+        let crashed = false;
+        let triggeredSet = new Set();
+
+        for (let step = 0; step < this.simSteps; step++) {
+            // Check and trigger orbs/pads during simulation to alter player state
+            this.handleSimInteractables(tempPlayer, obstacles, triggeredSet);
+
+            // Run simplified physics step
+            tempPlayer.update(this.simDt, inputHeld, false, floorY, ceilingY, null, null);
+            
+            if (recordTrajectory) {
+                this.predictedTrajectory.push({ x: tempPlayer.x, y: tempPlayer.y + tempPlayer.height/2 });
+            }
+
+            // Check collision with any actual lethal hazards
+            if (this.checkCollision(tempPlayer, obstacles)) {
+                crashed = true;
+                break;
+            }
+        }
+
+        return crashed;
+    }
+
+    handleSimInteractables(player, obstacles, triggeredSet) {
+        let pBox = {
+            x: player.x,
+            y: player.y,
+            w: player.width,
+            h: player.height
+        };
+
+        for (let obs of obstacles) {
+            let oBox = obs.getHitbox();
+            if (pBox.x < oBox.x + oBox.w &&
+                pBox.x + pBox.w > oBox.x &&
+                pBox.y < oBox.y + oBox.h &&
+                pBox.y + pBox.h > oBox.y) {
+                
+                // Continuous pull on gravity well
+                if (obs.type === OBSTACLE_TYPES.GRAVITY_WELL) {
+                    player.vy += (player.gravitySign * 400 * this.simDt);
+                    continue;
+                }
+
+                // Unique ID or position-based key to track triggering
+                let obsKey = `${obs.type}_${obs.x}_${obs.y}`;
+                if (triggeredSet.has(obsKey)) {
+                    continue; // Already triggered once in this simulation run
+                }
+                triggeredSet.add(obsKey);
+                
+                if (obs.type === OBSTACLE_TYPES.BOUNCE_PAD_YELLOW) {
+                    player.triggerBouncePad('yellow', null);
+                } else if (obs.type === OBSTACLE_TYPES.BOUNCE_PAD_RED) {
+                    player.triggerBouncePad('red', null);
+                } else if (obs.type === OBSTACLE_TYPES.BOUNCE_PAD_BLUE) {
+                    player.triggerBouncePad('blue', null);
+                } else if (obs.type === OBSTACLE_TYPES.ORB_BLUE) {
+                    player.triggerOrb('blue', null);
+                } else if (obs.type === OBSTACLE_TYPES.ORB_GREEN) {
+                    player.triggerOrb('green', null);
+                } else if (obs.type === OBSTACLE_TYPES.ORB_PINK) {
+                    player.triggerOrb('pink', null);
+                } else if (obs.type === OBSTACLE_TYPES.ORB_YELLOW) {
+                    player.triggerOrb('yellow', null);
+                } else if (obs.type === OBSTACLE_TYPES.DASH_ORB) {
+                    player.vy = player.jumpForce * 1.6 * player.gravitySign; // dash orb behavior
+                } else if (obs.type.startsWith('portal_')) {
+                    // Portal changes player mode in simulation to see ahead
+                    let modeName = obs.type.replace('portal_', '').toUpperCase();
+                    if (GAME_MODES[modeName]) {
+                        player.mode = GAME_MODES[modeName];
+                    }
+                }
+            }
+        }
+    }
+
+    checkCollision(player, obstacles) {
+        let pBox = {
+            x: player.x,
+            y: player.y,
+            w: player.width,
+            h: player.height
+        };
+
+        for (let obs of obstacles) {
+            // Ignore non-lethals, coin, platforms, portals, pads, and orbs
+            if (obs.type === OBSTACLE_TYPES.PLATFORM || 
+                obs.type === OBSTACLE_TYPES.COIN || 
+                obs.type.startsWith('portal_') ||
+                obs.type.startsWith('pad_') ||
+                obs.type.startsWith('orb_') ||
+                obs.type === OBSTACLE_TYPES.DASH_ORB ||
+                obs.type === OBSTACLE_TYPES.GRAVITY_WELL ||
+                obs.type === OBSTACLE_TYPES.FAKE_SPIKE) {
+                continue;
+            }
+            
+            // Invisible spikes only collide if opaque enough
+            if (obs.type === OBSTACLE_TYPES.INVISIBLE_SPIKE && obs.opacity < 0.4) {
+                continue;
+            }
+            
+            let oBox = obs.getHitbox();
+
+            // AABB Overlap check
+            if (pBox.x < oBox.x + oBox.w &&
+                pBox.x + pBox.w > oBox.x &&
+                pBox.y < oBox.y + oBox.h &&
+                pBox.y + pBox.h > oBox.y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    clonePlayerState(player) {
+        let clone = new Player(player.x, player.y);
+        clone.vx = player.vx;
+        clone.vy = player.vy;
+        clone.mode = player.mode;
+        clone.sizeMultiplier = player.sizeMultiplier;
+        clone.gravitySign = player.gravitySign;
+        clone.ufoHopsRemaining = player.ufoHopsRemaining;
+        clone.robotJumpTimer = player.robotJumpTimer;
+        clone.isGrounded = player.isGrounded;
+        clone.rotation = player.rotation;
+        clone.doubleJumpUsed = player.doubleJumpUsed;
+        clone.waveDirection = player.waveDirection;
+        clone.tempGravityTimer = player.tempGravityTimer;
+        clone.isTempGravity = player.isTempGravity;
+        return clone;
+    }
+}
+
+
+// Synthesizer Audio Engine using Web Audio API for retro beats and sound effects
+// Built to adapt tempo and instrument depth to selected difficulty levels.
+
+class AudioEngine {
+    constructor() {
+        this.ctx = null;
+        this.masterVolume = null;
+        this.isPlaying = false;
+        this.tempo = 120; // BPM
+        this.beatDuration = 60 / this.tempo;
+        
+        // Musical variables
+        this.beatCount = 0;
+        this.nextNoteTime = 0;
+        this.stepIndex = 0;
+        this.melodyNotes = [130.81, 146.83, 164.81, 196.00, 220.00]; // C2, D2, E2, G2, A2
+    }
+
+    init() {
+        if (this.ctx) return;
+        
+        // Initialize AudioContext
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContextClass();
+        
+        // Create master gain control
+        this.masterVolume = this.ctx.createGain();
+        this.masterVolume.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        this.masterVolume.connect(this.ctx.destination);
+    }
+
+    setVolume(value) {
+        if (!this.masterVolume) return;
+        // value ranges from 0 to 1
+        this.masterVolume.gain.setValueAtTime(value * 0.5, this.ctx.currentTime);
+    }
+
+    startMusic(difficulty) {
+        this.init();
+        if (this.isPlaying) return;
+
+        // Resume AudioContext if suspended (browser security)
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+
+        this.isPlaying = true;
+        
+        // Adjust BPM and melody based on difficulty
+        switch (difficulty) {
+            case 'EASY':
+                this.tempo = 110;
+                this.melodyNotes = [130.81, 146.83, 164.81, 196.00]; // Calm Pentatonic
+                break;
+            case 'NORMAL':
+                this.tempo = 125;
+                this.melodyNotes = [130.81, 146.83, 164.81, 196.00, 220.00];
+                break;
+            case 'HARD':
+            case 'HARDER':
+                this.tempo = 140;
+                this.melodyNotes = [110.00, 123.47, 130.81, 146.83, 164.81, 196.00]; // Expanded minor
+                break;
+            case 'INSANE':
+            case 'DEMON':
+                this.tempo = 160;
+                this.melodyNotes = [98.00, 110.00, 116.54, 130.81, 138.59, 146.83]; // Dark chromatic/minor
+                break;
+        }
+        
+        this.beatDuration = 60 / this.tempo;
+        this.nextNoteTime = this.ctx.currentTime;
+        this.beatCount = 0;
+        this.stepIndex = 0;
+        
+        this.musicScheduler();
+    }
+
+    stopMusic() {
+        this.isPlaying = false;
+    }
+
+    musicScheduler() {
+        if (!this.isPlaying) return;
+        
+        // Schedule sound triggers for the next 100ms
+        while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
+            this.scheduleBeat(this.stepIndex, this.nextNoteTime);
+            this.nextNoteTime += this.beatDuration / 4; // 16th notes
+            this.stepIndex = (this.stepIndex + 1) % 16;
+        }
+
+        // Keep loop alive
+        setTimeout(() => this.musicScheduler(), 30);
+    }
+
+    scheduleBeat(step, time) {
+        // Kick on every beat (steps 0, 4, 8, 12)
+        if (step % 4 === 0) {
+            this.triggerKick(time);
+        }
+        
+        // Snare on steps 4, 12
+        if (step === 4 || step === 12) {
+            this.triggerSnare(time);
+        }
+
+        // Hi-hat on 8th notes (steps 0, 2, 4, 6, 8, 10, 12, 14)
+        if (step % 2 === 0) {
+            this.triggerHiHat(time);
+        }
+
+        // Bass Synth Melody line
+        if (step % 2 === 0) {
+            let noteIdx = Math.floor(Math.sin(step + this.beatCount) * 3) + 2;
+            if (noteIdx < 0) noteIdx = 0;
+            if (noteIdx >= this.melodyNotes.length) noteIdx = this.melodyNotes.length - 1;
+            
+            let frequency = this.melodyNotes[noteIdx];
+            // Raise octaves occasionally on intense difficulties
+            if ((this.tempo > 130) && (step % 8 === 0)) {
+                frequency *= 2;
+            }
+            this.triggerSynth(frequency, time, this.beatDuration / 2);
+        }
+
+        if (step === 15) {
+            this.beatCount++;
+        }
+    }
+
+    triggerKick(time) {
+        if (!this.ctx || !this.masterVolume) return;
+        
+        let osc = this.ctx.createOscillator();
+        let gain = this.ctx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(this.masterVolume);
+        
+        osc.frequency.setValueAtTime(120, time);
+        osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.3);
+        
+        gain.gain.setValueAtTime(0.8, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+        
+        osc.start(time);
+        osc.stop(time + 0.3);
+    }
+
+    triggerSnare(time) {
+        if (!this.ctx || !this.masterVolume) return;
+        
+        // White noise buffer
+        let bufferSize = this.ctx.sampleRate * 0.15;
+        let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        let data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        
+        let noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        
+        let filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1000, time);
+        
+        let gain = this.ctx.createGain();
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterVolume);
+        
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+        
+        noise.start(time);
+        noise.stop(time + 0.15);
+    }
+
+    triggerHiHat(time) {
+        if (!this.ctx || !this.masterVolume) return;
+
+        let bufferSize = this.ctx.sampleRate * 0.04;
+        let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        let data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        let noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        let filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(8000, time);
+
+        let gain = this.ctx.createGain();
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterVolume);
+
+        gain.gain.setValueAtTime(0.12, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.04);
+
+        noise.start(time);
+        noise.stop(time + 0.04);
+    }
+
+    triggerSynth(freq, time, duration) {
+        if (!this.ctx || !this.masterVolume) return;
+
+        let osc = this.ctx.createOscillator();
+        let gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, time);
+
+        osc.connect(gain);
+        gain.connect(this.masterVolume);
+
+        gain.gain.setValueAtTime(0.18, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+        osc.start(time);
+        osc.stop(time + duration);
+    }
+
+    playSFX(type) {
+        this.init();
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+
+        let time = this.ctx.currentTime;
+        let osc = this.ctx.createOscillator();
+        let gain = this.ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(this.masterVolume);
+
+        switch (type) {
+            case 'jump_cube':
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, time);
+                osc.frequency.exponentialRampToValueAtTime(600, time + 0.1);
+                gain.gain.setValueAtTime(0.4, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                osc.start(time);
+                osc.stop(time + 0.1);
+                break;
+            case 'jump_ufo':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(450, time);
+                osc.frequency.linearRampToValueAtTime(300, time + 0.08);
+                gain.gain.setValueAtTime(0.3, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.08);
+                osc.start(time);
+                osc.stop(time + 0.08);
+                break;
+            case 'jump_robot':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, time);
+                osc.frequency.exponentialRampToValueAtTime(400, time + 0.15);
+                gain.gain.setValueAtTime(0.35, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+                osc.start(time);
+                osc.stop(time + 0.15);
+                break;
+            case 'jump_spider':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, time);
+                osc.frequency.exponentialRampToValueAtTime(200, time + 0.07);
+                gain.gain.setValueAtTime(0.4, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.07);
+                osc.start(time);
+                osc.stop(time + 0.07);
+                break;
+            case 'wave_sweep':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, time);
+                osc.frequency.exponentialRampToValueAtTime(800, time + 0.2);
+                gain.gain.setValueAtTime(0.25, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                osc.start(time);
+                osc.stop(time + 0.2);
+                break;
+            case 'bounce':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, time);
+                osc.frequency.exponentialRampToValueAtTime(700, time + 0.25);
+                gain.gain.setValueAtTime(0.5, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.25);
+                osc.start(time);
+                osc.stop(time + 0.25);
+                break;
+            case 'orb':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, time);
+                osc.frequency.exponentialRampToValueAtTime(1000, time + 0.12);
+                gain.gain.setValueAtTime(0.4, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.12);
+                osc.start(time);
+                osc.stop(time + 0.12);
+                break;
+            case 'gravity':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, time);
+                osc.frequency.linearRampToValueAtTime(150, time + 0.25);
+                gain.gain.setValueAtTime(0.35, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.25);
+                osc.start(time);
+                osc.stop(time + 0.25);
+                break;
+            case 'coin':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987.77, time); // B5
+                osc.frequency.setValueAtTime(1318.51, time + 0.08); // E6
+                gain.gain.setValueAtTime(0.45, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.35);
+                osc.start(time);
+                osc.stop(time + 0.35);
+                break;
+            case 'death':
+                // Retro low frequency thud + noise burst
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, time);
+                osc.frequency.linearRampToValueAtTime(40, time + 0.4);
+                gain.gain.setValueAtTime(0.65, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+                osc.start(time);
+                osc.stop(time + 0.4);
+                break;
+        }
+    }
+}
+
+
+// Full unified JS loader to compile all code blocks, hook controls, and run the canvas loop.
+// This matches MENU -> PLAYING -> DEAD states, handles rendering, parallax scroll, and HUD.
+
+class GameEngine {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.particleSystem = new ParticleSystem();
+        this.audioEngine = new AudioEngine();
+        
+        // Settings states
+        this.isAI = true;
+        this.soundOn = true;
+        this.showSeed = true;
+        this.showFPS = false;
+        this.volume = 0.5;
+        this.currentSeed = Math.floor(Math.random() * 999999);
+        this.difficulty = 'NORMAL';
+        
+        // Game states
+        this.state = 'MENU'; // MENU, PLAYING, DEAD
+        this.attempts = 1;
+        this.score = 0;
+        this.collectedCoins = 0;
+        
+        // Mechanics
+        this.player = null;
+        this.levelGen = null;
+        this.ai = new GDAutoPlayAI();
+        
+        // Physics environment bounds
+        this.floorY = 500;
+        this.ceilingY = 100;
+        
+        // Camera horizontal and vertical tracking
+        this.cameraX = 0;
+        this.cameraY = 0;
+        this.screenShakeTime = 0;
+        this.screenShakeIntensity = 0;
+        this.flashTime = 0;
+        this.flashColor = '#ffffff';
+        this.isMirrorVisual = false;
+        this.mirrorTimer = 0;
+
+        // Delta time trackers
+        this.lastTime = 0;
+        this.fps = 60;
+        this.fpsTimer = 0;
+        this.fpsCounter = 0;
+        
+        // Inputs
+        this.keys = {};
+        this.inputPressed = false;
+        this.inputHeld = false;
+        this.prevInputHeld = false;
+        
+        this.setupEvents();
+    }
+
+    setupEvents() {
+        // Keyboard inputs
+        window.addEventListener('keydown', (e) => {
+            this.keys[e.code] = true;
+            
+            // Trigger jump states
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                this.inputPressed = true;
+                this.inputHeld = true;
+            }
+
+            // Key mappings
+            if (e.code === 'KeyA') {
+                this.isAI = !this.isAI;
+                this.updateSettingsUI();
+            }
+            if (e.code === 'KeyM') {
+                this.soundOn = !this.soundOn;
+                this.audioEngine.setVolume(this.soundOn ? this.volume : 0);
+                this.updateSettingsUI();
+            }
+            if (e.code === 'KeyS') {
+                this.showSeed = !this.showSeed;
+                this.updateSettingsUI();
+            }
+            if (e.code === 'KeyF') {
+                this.showFPS = !this.showFPS;
+                this.updateSettingsUI();
+            }
+            if (e.code === 'KeyR') {
+                if (this.state === 'DEAD') this.restartRun();
+            }
+            if (e.code === 'KeyD') {
+                if (this.state === 'MENU') {
+                    this.cycleDifficulty();
+                }
+            }
+            if (e.code === 'Escape') {
+                if (this.state === 'PLAYING') {
+                    this.triggerDeath();
+                } else if (this.state === 'DEAD') {
+                    this.showMenu();
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                this.inputHeld = false;
+            }
+        });
+
+        // Touch & Click inputs for mobile/mouse play
+        const interactHandler = (e) => {
+            if (e.target.closest('button') || e.target.closest('input')) return; // ignore UI elements
+            
+            this.inputPressed = true;
+            this.inputHeld = true;
+            
+            // Auto-trigger restart on click/tap if dead
+            if (this.state === 'DEAD') {
+                this.restartRun();
+            }
+        };
+
+        const releaseHandler = (e) => {
+            this.inputHeld = false;
+        };
+
+        this.canvas.addEventListener('mousedown', interactHandler);
+        this.canvas.addEventListener('mouseup', releaseHandler);
+        
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            interactHandler(e);
+        });
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            releaseHandler(e);
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => this.resizeCanvas());
+        this.resizeCanvas();
+    }
+
+    resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    initRun(seed, difficulty) {
+        this.currentSeed = seed;
+        this.difficulty = difficulty;
+        this.collectedCoins = 0;
+        this.score = 0;
+        
+        // Spawn player slightly off center
+        this.player = new Player(100, 400);
+        this.player.vx = DIFFICULTIES[difficulty].speed;
+        
+        // Instantiate level generator
+        this.levelGen = new LevelGenerator(seed, difficulty);
+        
+        // Pre-generate 3 chunks initially
+        this.levelGen.generateNextChunk();
+        this.levelGen.generateNextChunk();
+        this.levelGen.generateNextChunk();
+        
+        // Start background music loop
+        if (this.soundOn) {
+            this.audioEngine.startMusic(difficulty);
+        } else {
+            this.audioEngine.stopMusic();
+        }
+        
+        this.state = 'PLAYING';
+        this.cameraX = 0;
+        this.cameraY = 0;
+        
+        // Show HUD overlay
+        document.getElementById('hud').classList.remove('hidden');
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('death-screen').classList.add('hidden');
+        
+        document.getElementById('hud-attempt').innerText = this.attempts;
+        this.updateHUDCoins();
+    }
+
+    restartRun() {
+        this.attempts++;
+        this.initRun(this.currentSeed, this.difficulty);
+    }
+
+    showMenu() {
+        this.state = 'MENU';
+        this.audioEngine.stopMusic();
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('death-screen').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+        this.updateSettingsUI();
+    }
+
+    cycleDifficulty() {
+        const keys = Object.keys(DIFFICULTIES);
+        const currentIndex = keys.indexOf(this.difficulty);
+        const nextIndex = (currentIndex + 1) % keys.length;
+        this.difficulty = keys[nextIndex];
+
+        // Update selected card styling in the DOM
+        const cards = document.querySelectorAll('.diff-card');
+        cards.forEach(card => {
+            card.classList.remove('selected');
+            if (card.classList.contains(`diff-${this.difficulty.toLowerCase()}`)) {
+                card.classList.add('selected');
+            }
+        });
+    }
+    updateSettingsUI() {
+        // Mode & Status UI update helper
+        const btnAI = document.getElementById('toggle-ai-menu');
+        btnAI.className = `setting-toggle ${this.isAI ? 'active' : ''}`;
+        btnAI.innerText = `AI AUTO-PLAY: ${this.isAI ? 'ON' : 'OFF'} [A]`;
+
+        const btnSound = document.getElementById('toggle-sound-menu');
+        btnSound.className = `setting-toggle ${this.soundOn ? 'active' : ''}`;
+        btnSound.innerText = `SOUNDS: ${this.soundOn ? 'ON' : 'OFF'} [M]`;
+
+        const btnSeed = document.getElementById('toggle-seed-menu');
+        btnSeed.className = `setting-toggle ${this.showSeed ? 'active' : ''}`;
+        btnSeed.innerText = `SEED: ${this.showSeed ? 'SHOW' : 'HIDE'} [S]`;
+
+        const btnFPS = document.getElementById('toggle-fps-menu');
+        btnFPS.className = `setting-toggle ${this.showFPS ? 'active' : ''}`;
+        btnFPS.innerText = `FPS: ${this.showFPS ? 'SHOW' : 'HIDE'} [F]`;
+
+        document.getElementById('hud-seed').style.display = this.showSeed ? 'block' : 'none';
+        document.getElementById('hud-fps').style.display = this.showFPS ? 'block' : 'none';
+    }
+
+    triggerDeath() {
+        this.state = 'DEAD';
+        this.audioEngine.stopMusic();
+        this.audioEngine.playSFX('death');
+        
+        // Trigger visual feedback (shake, red flash, particles explosion)
+        this.screenShakeTime = 0.4;
+        this.screenShakeIntensity = 18;
+        this.flashTime = 0.25;
+        this.flashColor = '#ff003c';
+        
+        this.particleSystem.spawnExplosion(this.player.x + this.player.width/2, this.player.y + this.player.height/2, this.player.color, 35);
+        
+        // Update death HUD
+        document.getElementById('death-stats').innerText = `Attempt ${this.attempts} | ${Math.floor(this.score)} meters`;
+        document.getElementById('death-ai-status').innerText = this.isAI ? 'ON' : 'OFF';
+        document.getElementById('death-seed-val').innerText = this.currentSeed;
+        
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('death-screen').classList.remove('hidden');
+    }
+
+    update(dt) {
+        if (dt > 0.1) dt = 0.1; // Limit delta time to prevent clipping during lag spikes
+        
+        // Track frame counter
+        this.fpsCounter++;
+        this.fpsTimer += dt;
+        if (this.fpsTimer >= 1.0) {
+            this.fps = this.fpsCounter;
+            this.fpsCounter = 0;
+            this.fpsTimer = 0;
+            document.getElementById('hud-fps').innerText = `${this.fps} FPS`;
+        }
+
+        // Screen effects decay
+        if (this.screenShakeTime > 0) this.screenShakeTime -= dt;
+        if (this.flashTime > 0) this.flashTime -= dt;
+        
+        if (this.isMirrorVisual) {
+            this.mirrorTimer -= dt;
+            if (this.mirrorTimer <= 0) {
+                this.isMirrorVisual = false;
+            }
+        }
+
+        this.particleSystem.update(dt);
+
+        if (this.state !== 'PLAYING' || !this.player || !this.levelGen) return;
+
+        // Auto-play AI action decisions
+        let act = { hold: false, press: false };
+        if (this.isAI) {
+            let diffConfig = DIFFICULTIES[this.difficulty];
+            act = this.ai.update(this.player, this.levelGen.activeChunks, this.floorY, this.ceilingY, diffConfig);
+        } else {
+            // Player controls mapping
+            act.hold = this.inputHeld;
+            act.press = this.inputPressed && !this.prevInputHeld; // Single triggers only
+        }
+
+        // Update player physics state
+        this.player.update(dt, act.hold, act.press, this.floorY, this.ceilingY, this.soundOn ? this.audioEngine : null, this.particleSystem);
+        
+        // Update dual partner clone if active
+        if (this.player.isDual && this.player.dualPartner) {
+            // Dual clone behaves similarly with inverted gravity update
+            this.player.dualPartner.update(dt, act.hold, act.press, this.floorY, this.ceilingY, null, this.particleSystem);
+            // Move companion at same velocity
+            this.player.dualPartner.vx = this.player.vx;
+            this.player.dualPartner.x = this.player.x; 
+        }
+
+        this.prevInputHeld = this.inputHeld;
+        this.inputPressed = false; // Reset tap
+
+        // Run level procedural chunks generation check
+        let playerX = this.player.x;
+        let lastChunk = this.levelGen.activeChunks[this.levelGen.activeChunks.length - 1];
+        if (playerX > lastChunk.x - 1200) {
+            this.levelGen.generateNextChunk();
+        }
+        this.levelGen.cleanUpPassedChunks(playerX);
+
+        // Check collision with hazards and interactions with items
+        this.resolveCollisions();
+
+        // Update camera tracking
+        this.cameraX = playerX - 180;
+        // Smooth vertical tracking
+        this.cameraY += (this.player.y - 280 - this.cameraY) * 5 * dt;
+
+        // Calculate score progress based on X travel
+        this.score = playerX / 10;
+        document.getElementById('hud-score').innerText = `${Math.floor(this.score).toLocaleString()}m`;
+        document.getElementById('hud-mode').innerText = this.player.mode;
+        document.getElementById('hud-mode').style.color = this.player.color;
+        document.getElementById('hud-seed').innerText = `SEED: ${this.currentSeed}`;
+
+        // HUD mini progress bar (percentage of current chunk completed)
+        let currentChunkIndex = Math.floor(playerX / 1000);
+        let progress = ((playerX % 1000) / 1000) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+    }
+
+    resolveCollisions() {
+        this.resolvePlayerCollisions(this.player);
+        if (this.player.isDual && this.player.dualPartner) {
+            this.resolvePlayerCollisions(this.player.dualPartner);
+        }
+    }
+
+    resolvePlayerCollisions(playerInstance) {
+        let pBox = {
+            x: playerInstance.x,
+            y: playerInstance.y,
+            w: playerInstance.width,
+            h: playerInstance.height
+        };
+
+        for (let chunk of this.levelGen.activeChunks) {
+            for (let obs of chunk.objects) {
+                if (obs.isCollected) continue;
+
+                let oBox = obs.getHitbox();
+
+                // AABB Overlap check
+                if (pBox.x < oBox.x + oBox.w &&
+                    pBox.x + pBox.w > oBox.x &&
+                    pBox.y < oBox.y + oBox.h &&
+                    pBox.y + pBox.h > oBox.y) {
+                    
+                    // Handle Coin collections
+                    if (obs.type === OBSTACLE_TYPES.COIN) {
+                        obs.isCollected = true;
+                        this.collectedCoins++;
+                        this.updateHUDCoins();
+                        if (this.soundOn) this.audioEngine.playSFX('coin');
+                        this.particleSystem.spawnOrbCollect(obs.x + obs.w/2, obs.y + obs.h/2, '#ffd700');
+                        continue;
+                    }
+
+                    // Handle Portals
+                    if (obs.type.startsWith('portal_')) {
+                        if (obs.hasActivated) continue;
+                        obs.hasActivated = true;
+
+                        let modeName = obs.type.replace('portal_', '').toUpperCase();
+                        if (GAME_MODES[modeName] && playerInstance.mode !== GAME_MODES[modeName]) {
+                            playerInstance.mode = GAME_MODES[modeName];
+                            this.triggerScreenFlash(playerInstance.color);
+                            this.audioEngine.playSFX('jump_cube');
+                            this.particleSystem.spawnPortalEntry(obs.x + obs.w/2, obs.y + obs.h/2, playerInstance.color);
+                        } else if (obs.type === PORTAL_TYPES.SIZE_MINI) {
+                            playerInstance.sizeMultiplier = 0.5;
+                        } else if (obs.type === PORTAL_TYPES.SIZE_NORMAL) {
+                            playerInstance.sizeMultiplier = 1.0;
+                        } else if (obs.type === PORTAL_TYPES.SPEED_SLOW) {
+                            playerInstance.vx = DIFFICULTIES[this.difficulty].speed * 0.6;
+                        } else if (obs.type === PORTAL_TYPES.SPEED_NORMAL) {
+                            playerInstance.vx = DIFFICULTIES[this.difficulty].speed;
+                        } else if (obs.type === PORTAL_TYPES.SPEED_FAST) {
+                            playerInstance.vx = DIFFICULTIES[this.difficulty].speed * 1.5;
+                        } else if (obs.type === PORTAL_TYPES.GRAVITY_FLIP) {
+                            playerInstance.gravitySign = -1;
+                            this.triggerScreenFlash('#ff00ff');
+                            this.audioEngine.playSFX('gravity');
+                        } else if (obs.type === PORTAL_TYPES.GRAVITY_NORMAL) {
+                            playerInstance.gravitySign = 1;
+                            this.triggerScreenFlash('#00ffff');
+                            this.audioEngine.playSFX('gravity');
+                        } else if (obs.type === PORTAL_TYPES.MIRROR) {
+                            this.isMirrorVisual = true;
+                            this.mirrorTimer = 4.0;
+                            this.triggerScreenFlash('#ffffff');
+                        } else if (obs.type === PORTAL_TYPES.DUAL) {
+                            playerInstance.isDual = true;
+                            playerInstance.dualPartner = playerInstance.clone();
+                            this.triggerScreenFlash('#ffcc00');
+                        }
+                        continue;
+                    }
+
+                    // Handle Pads & Orbs interactions (Non-lethals)
+                    if (obs.type === OBSTACLE_TYPES.BOUNCE_PAD_YELLOW) {
+                        playerInstance.triggerBouncePad('yellow', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.BOUNCE_PAD_RED) {
+                        playerInstance.triggerBouncePad('red', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.BOUNCE_PAD_BLUE) {
+                        playerInstance.triggerBouncePad('blue', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.ORB_BLUE) {
+                        playerInstance.triggerOrb('blue', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.ORB_GREEN) {
+                        playerInstance.triggerOrb('green', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.ORB_PINK) {
+                        playerInstance.triggerOrb('pink', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.ORB_YELLOW) {
+                        playerInstance.triggerOrb('yellow', this.soundOn ? this.audioEngine : null);
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.DASH_ORB) {
+                        playerInstance.vy = playerInstance.jumpForce * 1.6 * playerInstance.gravitySign;
+                        continue;
+                    } else if (obs.type === OBSTACLE_TYPES.GRAVITY_WELL) {
+                        playerInstance.vy += (playerInstance.gravitySign * 800 * 1/60);
+                        continue;
+                    }
+
+                    // Handle Platform platforms & crumbling platform landing logic
+                    if (obs.type === OBSTACLE_TYPES.PLATFORM || obs.type === OBSTACLE_TYPES.CRUMBLING_PLATFORM || obs.type === OBSTACLE_TYPES.MOVING_PLATFORM) {
+                        let isFallingOnPlatform = false;
+                        if (playerInstance.gravitySign === 1 && playerInstance.vy >= 0 && playerInstance.y + playerInstance.height <= obs.y + 12) {
+                            isFallingOnPlatform = true;
+                        } else if (playerInstance.gravitySign === -1 && playerInstance.vy <= 0 && playerInstance.y >= obs.y + obs.h - 12) {
+                            isFallingOnPlatform = true;
+                        }
+
+                        if (isFallingOnPlatform) {
+                            playerInstance.vy = 0;
+                            playerInstance.isGrounded = true;
+                            if (playerInstance.gravitySign === 1) {
+                                playerInstance.y = obs.y - playerInstance.height;
+                            } else {
+                                playerInstance.y = obs.y + obs.h;
+                            }
+                            
+                            // Crumbling triggers
+                            if (obs.type === OBSTACLE_TYPES.CRUMBLING_PLATFORM) {
+                                obs.isCrumbling = true;
+                            }
+                        } else {
+                            // Hit wall of platform from side -> Crashing!
+                            if (pBox.x + pBox.w - 5 > obs.x && pBox.x + 5 < obs.x + obs.w) {
+                                this.triggerDeath();
+                                return;
+                            }
+                        }
+                        continue;
+                    }
+
+                    // Lethal obstacles -> triggers death (Fake spikes pass through)
+                    if (obs.type === OBSTACLE_TYPES.FAKE_SPIKE) continue;
+                    if (obs.type === OBSTACLE_TYPES.INVISIBLE_SPIKE && obs.opacity < 0.4) continue;
+
+                    this.triggerDeath();
+                    return;
+                }
+            }
+        }
+    }
+
+    triggerScreenFlash(color) {
+        this.flashTime = 0.15;
+        this.flashColor = color;
+    }
+
+    updateHUDCoins() {
+        document.getElementById('hud-coins').innerText = `COINS: ${this.collectedCoins}/3`;
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Apply screen shake camera offsets
+        let camOffsetX = 0;
+        let camOffsetY = 0;
+        if (this.screenShakeTime > 0) {
+            camOffsetX = (Math.random() - 0.5) * this.screenShakeIntensity;
+            camOffsetY = (Math.random() - 0.5) * this.screenShakeIntensity;
+        }
+
+        this.ctx.save();
+        
+        // Mirror visual flip (horizontal flip centered on canvas)
+        if (this.isMirrorVisual) {
+            this.ctx.translate(this.canvas.width, 0);
+            this.ctx.scale(-1, 1);
+        }
+
+        this.ctx.translate(-this.cameraX + camOffsetX, -this.cameraY + camOffsetY);
+        // Render backgrounds, parallax layers, grids
+        this.drawParallaxBackground();
+
+        // Render floor & ceiling bounds
+        this.drawWorldBounds();
+
+        // Render level objects
+        if (this.levelGen && this.player) {
+            for (let chunk of this.levelGen.activeChunks) {
+                for (let obs of chunk.objects) {
+                    // Update obstacle parameters first
+                    obs.update(1/60, this.player.x);
+                    obs.draw(this.ctx);
+                }
+            }
+        }
+
+        // Draw AI visual overlays
+        if (this.isAI && this.state === 'PLAYING') {
+            this.drawAIDebugOverlays();
+        }
+
+        // Render particles
+        this.particleSystem.draw(this.ctx);
+
+        // Render player character
+        if (this.state === 'PLAYING') {
+            this.player.draw(this.ctx);
+            
+            // Render dual partner clone if active
+            if (this.player.isDual && this.player.dualPartner) {
+                this.player.dualPartner.draw(this.ctx);
+            }
+        }
+        this.ctx.restore();
+
+        // Render color screen flashes
+        if (this.flashTime > 0) {
+            this.ctx.fillStyle = this.flashColor;
+            this.ctx.globalAlpha = (this.flashTime / 0.15) * 0.25;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.globalAlpha = 1.0;
+        }
+    }
+
+    drawParallaxBackground() {
+        let width = this.canvas.width;
+        let height = this.canvas.height;
+        
+        // Deep space color
+        this.ctx.fillStyle = '#050512';
+        this.ctx.fillRect(this.cameraX, this.cameraY, width, height);
+
+        // Render background grid
+        this.ctx.strokeStyle = '#0f0f35';
+        this.ctx.lineWidth = 1;
+        let gridSize = 80;
+        let startGridX = Math.floor(this.cameraX / gridSize) * gridSize;
+        let startGridY = Math.floor(this.cameraY / gridSize) * gridSize;
+
+        this.ctx.beginPath();
+        for (let x = startGridX; x < this.cameraX + width + gridSize; x += gridSize) {
+            this.ctx.moveTo(x, this.cameraY);
+            this.ctx.lineTo(x, this.cameraY + height);
+        }
+        for (let y = startGridY; y < this.cameraY + height + gridSize; y += gridSize) {
+            this.ctx.moveTo(this.cameraX, y);
+            this.ctx.lineTo(this.cameraX + width, y);
+        }
+        this.ctx.stroke();
+
+        // Parallax stars layer
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        for (let i = 0; i < 40; i++) {
+            // Using deterministic placement base coordinates
+            let px = (Math.sin(i * 123.45) * 0.5 + 0.5) * 3000;
+            let py = (Math.cos(i * 543.21) * 0.5 + 0.5) * 600;
+            // Move slower than camera (parallax)
+            let starX = px + this.cameraX * 0.7;
+            this.ctx.fillRect(starX % 3000, py, 2, 2);
+        }
+    }
+
+    drawWorldBounds() {
+        let w = this.canvas.width;
+        
+        // Floor line neon neon cyan
+        this.ctx.strokeStyle = '#00ffff';
+        this.ctx.shadowColor = '#00ffff';
+        this.ctx.shadowBlur = 10;
+        this.ctx.lineWidth = 4;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.cameraX, this.floorY);
+        this.ctx.lineTo(this.cameraX + w, this.floorY);
+        this.ctx.stroke();
+        
+        // Ceiling line neon magenta
+        this.ctx.strokeStyle = '#ff00ff';
+        this.ctx.shadowColor = '#ff00ff';
+        this.ctx.shadowBlur = 10;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.cameraX, this.ceilingY);
+        this.ctx.lineTo(this.cameraX + w, this.ceilingY);
+        this.ctx.stroke();
+        
+        this.ctx.shadowBlur = 0; // reset
+    }
+
+    drawAIDebugOverlays() {
+        if (!this.player || !this.ai.detectionBox) return;
+        // Translucent green box showing AI detection zone ahead
+        this.ctx.fillStyle = 'rgba(0, 255, 136, 0.05)';
+        this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.fillRect(this.ai.detectionBox.x, this.ai.detectionBox.y, this.ai.detectionBox.w, this.ai.detectionBox.h);
+        this.ctx.strokeRect(this.ai.detectionBox.x, this.ai.detectionBox.y, this.ai.detectionBox.w, this.ai.detectionBox.h);
+        // Draw predicted trajectory path
+        if (this.ai.predictedTrajectory.length > 1) {
+            this.ctx.strokeStyle = '#00ff88';
+            this.ctx.lineWidth = 2.5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.ai.predictedTrajectory[0].x, this.ai.predictedTrajectory[0].y);
+            for (let i = 1; i < this.ai.predictedTrajectory.length; i++) {
+                this.ctx.lineTo(this.ai.predictedTrajectory[i].x, this.ai.predictedTrajectory[i].y);
+            }
+            this.ctx.stroke();
+            
+            // Tiny arrow indicating forward target vector
+            let lastPos = this.ai.predictedTrajectory[this.ai.predictedTrajectory.length - 1];
+            this.ctx.fillStyle = '#00ff88';
+            this.ctx.beginPath();
+            this.ctx.arc(lastPos.x, lastPos.y, 4, 0, Math.PI*2);
+            this.ctx.fill();
+        }
+    }
+}
+
+
+
+// Instantiate the game and start the requestAnimationFrame loop
+let game;
+
+// Setup Menu UI listeners and populate difficulty cards
+window.addEventListener('load', () => {
+    const diffGrid = document.getElementById('difficulty-grid');
+    
+    // Create cards for each difficulty
+    Object.values(DIFFICULTIES).forEach(diff => {
+        const card = document.createElement('div');
+        card.className = `diff-card diff-${diff.id.toLowerCase()}`;
+        if (diff.id === 'NORMAL') card.classList.add('selected');
+        card.style.color = diff.color;
+        
+        card.innerHTML = `
+            <div class="diff-icon">${diff.icon}</div>
+            <div class="diff-name">${diff.name}</div>
+            <div class="diff-stars">${'★'.repeat(diff.stars || 1)}</div>
+        `;
+        
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            if (game) {
+                game.difficulty = diff.id;
+            }
+        });
+        
+        diffGrid.appendChild(card);
+    });
+
+    game = new GameEngine();
+
+    // Hook settings panel buttons
+    document.getElementById('toggle-ai-menu').addEventListener('click', () => {
+        game.isAI = !game.isAI;
+        game.updateSettingsUI();
+        document.getElementById('hud-ai-status').innerText = game.isAI ? 'ON' : 'OFF';
+        document.getElementById('hud-ai-status').style.color = game.isAI ? '#00ff88' : '#ff3366';
+    });
+
+    document.getElementById('toggle-sound-menu').addEventListener('click', () => {
+        game.soundOn = !game.soundOn;
+        game.updateSettingsUI();
+    });
+
+    document.getElementById('toggle-seed-menu').addEventListener('click', () => {
+        game.showSeed = !game.showSeed;
+        game.updateSettingsUI();
+    });
+
+    document.getElementById('toggle-fps-menu').addEventListener('click', () => {
+        game.showFPS = !game.showFPS;
+        game.updateSettingsUI();
+    });
+
+    document.getElementById('volume-slider').addEventListener('input', (e) => {
+        game.volume = e.target.value / 100;
+        game.audioEngine.setVolume(game.volume);
+    });
+
+    // Start Button
+    document.getElementById('start-btn').addEventListener('click', () => {
+        // Generate seed if not specified or set randomly
+        const seedVal = Math.floor(Math.random() * 999999);
+        game.initRun(seedVal, game.difficulty);
+    });
+
+    // Restart Button
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        game.restartRun();
+    });
+
+    // Menu button
+    document.getElementById('menu-btn').addEventListener('click', () => {
+        game.showMenu();
+    });
+
+    // Audio Unlock Overlay
+    const unlockBtn = document.getElementById('unlock-btn');
+    const unlockOverlay = document.getElementById('audio-unlock-overlay');
+    
+    const unlockFunc = () => {
+        game.audioEngine.init();
+        unlockOverlay.classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+    };
+
+    unlockBtn.addEventListener('click', unlockFunc);
+    unlockOverlay.addEventListener('click', unlockFunc);
+
+    // Run game loop
+    function loop(timestamp) {
+        let dt = (timestamp - game.lastTime) / 1000;
+        game.lastTime = timestamp;
+        
+        // Update & Render
+        game.update(dt);
+        game.draw();
+        
+        requestAnimationFrame(loop);
+    }
+    
+    game.lastTime = performance.now();
+    requestAnimationFrame(loop);
+});
+
+    </script>
+</body>
+</html>
