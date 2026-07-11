@@ -1,0 +1,24 @@
+{
+  "mode": "jobs",
+  "topic": "moobangbench-icon-tests",
+  "topic_root": "E:/workspaces/moobang-bench/ImageGallery/moobangbench-icon-tests",
+  "size": "1024x1024",
+  "quality": "medium",
+  "concurrency": 2,
+  "resume": true,
+  "dry_run": false,
+  "prompt_prefix": "Square app icon and favicon concept for MoobangBench, an AI coding benchmark website. Original brand mark, centered composition, instantly readable at 24 pixels, flat vector geometry, crisp SVG-like edges, near-black background, warm amber accent with restrained off-white details, modern developer-tool aesthetic. ",
+  "prompt_suffix": " No full brand name, no sentences, no tiny text, no mockup, no device frame, no photorealism, no gradients that reduce legibility, no watermark, no existing company logos.",
+  "jobs": [
+    { "id": "01-circuit-m", "prompt": "Bold geometric letter M built from two connected circuit traces, compact rounded-square silhouette." },
+    { "id": "02-code-bench", "prompt": "Minimal coding bench symbol combining angle brackets with a sturdy horizontal benchmark platform." },
+    { "id": "03-benchmark-cube", "prompt": "Isometric cube split into code-grid faces with one precise benchmark tick mark." },
+    { "id": "04-agent-rank", "prompt": "Friendly abstract AI agent visor above three ascending ranking bars, highly simplified." },
+    { "id": "05-bridge-bolt", "prompt": "Two code bracket pillars connected by a sharp lightning bridge, energetic but minimal." },
+    { "id": "06-terminal-trophy", "prompt": "Terminal window reduced to a trophy silhouette with a single prompt chevron." },
+    { "id": "07-neural-hex", "prompt": "Hexagonal neural node network forming a subtle M-shaped negative space." },
+    { "id": "08-gauge-cursor", "prompt": "Performance gauge merged with a mouse cursor arrow, communicating interactive benchmarks." },
+    { "id": "09-layered-brackets", "prompt": "Three nested code brackets forming a compact dimensional badge and comparison layers." },
+    { "id": "10-cyber-bull", "prompt": "Playful geometric cyber bull or cow head made from code bracket horns, confident mascot mark, very simple." }
+  ]
+}

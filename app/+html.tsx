@@ -62,7 +62,7 @@ body { margin: 0; background: #0f0f0f; color: #f4f4f3; }
 
 export default function RootHtml({ children }: PropsWithChildren) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />

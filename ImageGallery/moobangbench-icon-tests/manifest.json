@@ -1,0 +1,26 @@
+{
+  "topic": "moobangbench-icon-tests",
+  "count": 10,
+  "size": "1024x1024",
+  "quality": "medium",
+  "purpose": "Draft favicon and app icon exploration",
+  "spec": "icon-jobs.json",
+  "contactSheet": "contact-sheet.png",
+  "outputs": [
+    "output/moobangbench-icon-tests/01-circuit-m.png",
+    "output/moobangbench-icon-tests/02-code-bench.png",
+    "output/moobangbench-icon-tests/03-benchmark-cube.png",
+    "output/moobangbench-icon-tests/04-agent-rank.png",
+    "output/moobangbench-icon-tests/05-bridge-bolt.png",
+    "output/moobangbench-icon-tests/06-terminal-trophy.png",
+    "output/moobangbench-icon-tests/07-neural-hex.png",
+    "output/moobangbench-icon-tests/08-gauge-cursor.png",
+    "output/moobangbench-icon-tests/09-layered-brackets.png",
+    "output/moobangbench-icon-tests/10-cyber-bull.png"
+  ],
+  "recommended": [
+    { "rank": 1, "id": "01-circuit-m", "reason": "Clear M identity, circuit theme, strongest small-size legibility." },
+    { "rank": 2, "id": "05-bridge-bolt", "reason": "Bold code and performance metaphor with strong contrast." },
+    { "rank": 3, "id": "08-gauge-cursor", "reason": "Direct benchmark and interactive testing metaphor." }
+  ]
+}

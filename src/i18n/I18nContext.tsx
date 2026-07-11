@@ -15,7 +15,7 @@ const dictionaries: Record<Language, Dictionary> = { en, ko };
 const I18nContext = createContext<I18nValue | null>(null);
 
 export function I18nProvider({ children }: PropsWithChildren) {
-  const [lang, setLangState] = useState<Language>('en');
+  const [lang, setLangState] = useState<Language>('ko');
 
   useEffect(() => {
     const saved = window.localStorage.getItem('lang');
