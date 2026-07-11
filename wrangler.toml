@@ -4,4 +4,4 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "moobangbench"
-database_id = "PLACEHOLDER"
+database_id = "6e007915-a574-4e36-b4a5-770f5c04aec6"

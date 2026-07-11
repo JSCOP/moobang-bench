@@ -7,7 +7,7 @@
     "start": "expo start",
     "dev": "expo start --web",
     "check:data": "tsx scripts/check-data.ts",
-    "build": "npm run check:data && expo export --platform web",
+    "build": "npm run check:data && expo export --platform web && tsx scripts/write-ads-txt.ts",
     "preview:cf": "wrangler pages dev dist",
     "cf:pages:create": "wrangler pages project create moobangbench --production-branch main",
     "cf:db:create": "wrangler d1 create moobangbench",

@@ -2,6 +2,10 @@
 
 Expo Router static site for comparing playable AI coding benchmark artifacts. Community voting runs on Cloudflare Pages Functions and D1.
 
+Live site: `https://moobangbench.pages.dev`
+
+Source: `https://github.com/JSCOP/moobang-bench`
+
 ## Local development
 
 Requirements: Node.js 20+ and `.dev.vars` containing `VOTE_SALT=dev-salt`.
@@ -26,7 +30,9 @@ Free-plan capacity relevant to this project:
 - D1: 5 million rows read/day, 100,000 rows written/day, and 5 GB storage.
 - Default production URL: `https://moobangbench.pages.dev`; no purchased domain is required.
 
-### First deployment
+### Provisioned production resources
+
+The Pages project, D1 database, production schema, and `VOTE_SALT` secret are already provisioned. The commands below are only needed when recreating the stack in another Cloudflare account.
 
 ```sh
 npx wrangler login
@@ -46,13 +52,11 @@ Use a long random value for `VOTE_SALT`. Every later manual deployment is `npm r
 
 ### GitHub automatic deployment
 
-`.github/workflows/deploy.yml` deploys every push to `main`. Add these GitHub Actions repository secrets:
+`.github/workflows/deploy.yml` deploys every push to `main` after both required repository secrets exist. `CLOUDFLARE_ACCOUNT_ID` is configured; create a scoped Cloudflare API token and add it as:
 
 - `CLOUDFLARE_API_TOKEN`: token with Pages edit access.
-- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account id.
-- Optional AdSense values listed in `.env.example` after approval.
 
-The committed `wrangler.toml` must contain the real D1 database id before the workflow runs.
+Optional AdSense values from `.env.example` are added only after AdSense approval. Until the API token exists, the workflow safely skips and manual `npm run deploy` remains available.
 
 ## AdSense constraint
 
@@ -64,8 +68,8 @@ To enable AdSense later:
 
 1. Purchase or otherwise obtain a standard domain you control and attach it to the Pages project.
 2. Apply for AdSense and wait for Google site approval.
-3. Copy `.env.example` values into Cloudflare Pages or GitHub Actions build variables using the real client and slot ids.
-4. Replace the publisher id in `public/ads.txt`.
+3. Add the real client and slot ids from `.env.example` as build environment variables or GitHub Actions secrets.
+4. Rebuild; `scripts/write-ads-txt.ts` generates the correct `dist/ads.txt` entry automatically.
 5. Enable Google's consent management message where required.
 
 Without all AdSense variables, the site intentionally renders ad placeholders and sends no AdSense requests.
