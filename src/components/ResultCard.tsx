@@ -1,12 +1,11 @@
 import { Link } from 'expo-router';
-import type { CSSProperties } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { editorScore, getModel, getTool } from '@/data';
 import type { Result } from '@/data/validate';
 import type { CommunityScore } from '@/hooks/useScores';
 import { useI18n } from '@/i18n/I18nContext';
 import { colors, radius, spacing } from '@/theme';
-import { DemoFrame } from './DemoFrame';
+import { DemoThumbnail } from './DemoThumbnail';
 import { ScoreBadge } from './ScoreBadge';
 
 type ResultCardProps = {
@@ -21,7 +20,7 @@ export function ResultCard({ result, community }: ResultCardProps) {
 
   return (
     <View style={styles.card}>
-      <DemoFrame resultId={result.id} height={220} />
+      <DemoThumbnail resultId={result.id} title={model?.name ?? result.model} />
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{model?.name ?? result.model}</Text>
@@ -29,14 +28,6 @@ export function ResultCard({ result, community }: ResultCardProps) {
         </View>
         <ScoreBadge editor={editorScore(result)} community={community} />
         <View style={styles.actions}>
-          <a
-            href={`/demos/${result.id}/index.html`}
-            target="_blank"
-            rel="noreferrer"
-            style={playLinkStyle}
-          >
-            {t('play_demo')} ↗
-          </a>
           <Link href={{ pathname: '/results/[id]', params: { id: result.id } }} asChild>
             <Pressable accessibilityRole="link" style={styles.link}>
               <Text style={styles.linkText}>{t('view_result')} →</Text>
@@ -48,15 +39,6 @@ export function ResultCard({ result, community }: ResultCardProps) {
   );
 }
 
-const playLinkStyle: CSSProperties = {
-  color: colors.onAccent,
-  backgroundColor: colors.accent,
-  borderRadius: radius.sm,
-  padding: '8px 12px',
-  fontSize: 13,
-  fontWeight: 700,
-  textDecoration: 'none',
-};
 
 const styles = StyleSheet.create({
   card: { flexBasis: 320, flexGrow: 1, maxWidth: 560, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface },

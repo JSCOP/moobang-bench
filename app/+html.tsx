@@ -46,6 +46,40 @@ body { margin: 0; background: #0f0f0f; color: #f4f4f3; }
 }
 .mb-menu > summary::-webkit-details-marker { display: none; }
 .mb-menu[open] > summary { color: #f4f4f3; border-color: #303030; }
+.mb-demo-button {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #080808;
+  cursor: pointer;
+  text-decoration: none;
+}
+.mb-demo-button img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.mb-demo-button:hover img,
+.mb-demo-button:focus-visible img {
+  transform: scale(1.015);
+  opacity: 0.78;
+}
+.mb-demo-button:focus-visible { outline: 2px solid #e2a33d; outline-offset: -2px; }
+.mb-demo-label {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #141414;
+  background: #e2a33d;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
 @media (max-width: 899px) {
   .mb-sidebar { display: none; }
   .mb-main { margin-left: 0; }
