@@ -6,12 +6,13 @@ import { useI18n } from '@/i18n/I18nContext';
 import { colors, spacing } from '@/theme';
 import { LangToggle } from './LangToggle';
 
-type NavItem = { href: '/' | '/benchmarks' | '/leaderboard' | '/apps-agents' | '/about'; label: string };
+type NavItem = { href: '/' | '/benchmarks' | '/leaderboard' | '/apps-agents' | '/about' | '/privacy'; label: string };
 
 const exploreItems: NavItem[] = [
   { href: '/', label: 'nav_home' },
   { href: '/benchmarks', label: 'nav_benchmarks' },
   { href: '/about', label: 'nav_about' },
+  { href: '/privacy', label: 'nav_privacy' },
 ];
 
 const rankingItems: NavItem[] = [
@@ -102,6 +103,11 @@ export function Sidebar() {
         <NavLinks />
         <View style={styles.railBottom}>
           <LangToggle />
+          <Link href="/privacy" asChild>
+            <Pressable accessibilityRole="link">
+              <Text style={styles.footerLink}>{t('nav_privacy')}</Text>
+            </Pressable>
+          </Link>
           <Text style={styles.footerText}>© 2026 MoobangBench</Text>
           <Text style={styles.footerText}>{t('footer_copy')}</Text>
         </View>
@@ -151,6 +157,7 @@ const styles = StyleSheet.create({
   navText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
   navTextActive: { color: colors.text },
   footerText: { color: colors.faint, fontSize: 11, lineHeight: 16 },
+  footerLink: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   mobileInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
   mobileRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   mobileMenu: { position: 'absolute', top: 40, right: 0, width: 240, backgroundColor: colors.bgSidebar, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing.sm, boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)' },

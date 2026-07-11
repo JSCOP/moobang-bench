@@ -14,12 +14,12 @@ export function AdSlot({ slot, style }: AdSlotProps) {
   const { t } = useI18n();
 
   useEffect(() => {
-    if (!client) return;
+    if (!client || !slot) return;
     const adWindow = window as typeof window & { adsbygoogle?: unknown[] };
     (adWindow.adsbygoogle ??= []).push({});
-  }, []);
+  }, [slot]);
 
-  if (!client) {
+  if (!client || !slot) {
     return (
       <View style={[styles.placeholder, style]}>
         <Text style={styles.placeholderText}>{t('ad')}</Text>

@@ -2,6 +2,7 @@ import Head from 'expo-router/head';
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type CSSProperties } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { adSlots } from '@/ads';
 import { AdSlot } from '@/components/AdSlot';
 import { DemoFrame } from '@/components/DemoFrame';
 import { ScoreBadge } from '@/components/ScoreBadge';
@@ -87,7 +88,7 @@ export default function ResultDetailPage() {
         <ScoreBadge editor={editorScore(result)} community={community} />
         <VoteWidget resultId={result.id} onVoted={setVotedScore} />
       </View>
-      <AdSlot slot="0000000003" />
+      <AdSlot slot={adSlots.result} />
     </View>
   );
 }

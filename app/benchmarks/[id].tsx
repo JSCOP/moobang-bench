@@ -1,6 +1,7 @@
 import Head from 'expo-router/head';
 import { useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
+import { adSlots } from '@/ads';
 import { AdSlot } from '@/components/AdSlot';
 import { ResultCard } from '@/components/ResultCard';
 import { getBenchmarks, getResultsByBenchmark } from '@/data';
@@ -38,7 +39,7 @@ export default function BenchmarkDetailPage() {
       <View style={styles.grid}>
         {results.map((result) => <ResultCard key={result.id} result={result} community={scores?.[result.id]} />)}
       </View>
-      <AdSlot slot="0000000002" />
+      <AdSlot slot={adSlots.benchmark} />
     </View>
   );
 }

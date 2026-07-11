@@ -9,8 +9,11 @@
     "check:data": "tsx scripts/check-data.ts",
     "build": "npm run check:data && expo export --platform web",
     "preview:cf": "wrangler pages dev dist",
+    "cf:pages:create": "wrangler pages project create moobangbench --production-branch main",
+    "cf:db:create": "wrangler d1 create moobangbench",
     "db:migrate:local": "wrangler d1 execute moobangbench --local --file=./schema.sql",
     "db:migrate:remote": "wrangler d1 execute moobangbench --remote --file=./schema.sql",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name moobangbench",
     "lint": "expo lint"
   },
   "dependencies": {

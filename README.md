@@ -1,59 +1,80 @@
 # MoobangBench
 
-Public Expo Router static site for comparing live AI coding benchmark artifacts. Community voting runs on Cloudflare Pages Functions with D1.
+Expo Router static site for comparing playable AI coding benchmark artifacts. Community voting runs on Cloudflare Pages Functions and D1.
 
 ## Local development
 
-Requirements: Node.js 20+, npm, and a local `.dev.vars` file containing `VOTE_SALT=dev-salt`.
+Requirements: Node.js 20+ and `.dev.vars` containing `VOTE_SALT=dev-salt`.
 
 ```sh
 npm install
-npm run check:data
 npm run build
 npm run db:migrate:local
 npm run preview:cf
 ```
 
-Open `http://127.0.0.1:8788`. `npm run dev` runs the UI without Pages Functions.
+Open `http://127.0.0.1:8788`. `npm run dev` runs only the UI; voting requires the Cloudflare preview command.
 
-## Cloudflare deployment
+## Zero-cost production stack
 
-1. Authenticate and create the database:
-   ```sh
-   npx wrangler login
-   npx wrangler d1 create moobangbench
-   ```
-2. Replace `PLACEHOLDER` in `wrangler.toml` with the returned D1 database id.
-3. Apply the production schema:
-   ```sh
-   npm run db:migrate:remote
-   ```
-4. Push the repository to GitHub. In Cloudflare Pages, connect the repository with build command `npm run build` and output directory `dist`.
-5. Configure the vote salt:
-   ```sh
-   npx wrangler pages secret put VOTE_SALT --project-name moobangbench
-   ```
+Cloudflare Pages is used instead of GitHub Pages because GitHub Pages cannot run the vote API or D1 database.
 
-## Domain
+Free-plan capacity relevant to this project:
 
-Buy `moobangbench.ai` from a registrar supporting `.ai`, add the site to Cloudflare, update the registrar nameservers, then add `moobangbench.ai` and `www.moobangbench.ai` under Pages custom domains. `public/_redirects` sends `www` to the apex domain.
+- Static asset requests: free and unlimited.
+- Pages Functions: included in the Workers Free quota of 100,000 requests per day.
+- D1: 5 million rows read/day, 100,000 rows written/day, and 5 GB storage.
+- Default production URL: `https://moobangbench.pages.dev`; no purchased domain is required.
 
-## AdSense
+### First deployment
 
-After the live domain is approved:
+```sh
+npx wrangler login
+npm run cf:pages:create
+npm run cf:db:create
+```
 
-1. Set `EXPO_PUBLIC_ADSENSE_CLIENT` in Cloudflare Pages build environment variables.
-2. Replace the placeholder publisher id in `public/ads.txt`.
-3. Replace the placeholder slot ids passed to `AdSlot` in `app/_layout.tsx`, `app/benchmarks/[id].tsx`, and `app/results/[id].tsx`.
-4. Enable AdSense's EU consent message in the AdSense console.
+Copy the `database_id` returned by the last command into `wrangler.toml`, replacing `PLACEHOLDER`, then run:
 
-Without `EXPO_PUBLIC_ADSENSE_CLIENT`, stable-layout ad placeholders render and the AdSense script is not loaded.
+```sh
+npm run db:migrate:remote
+npx wrangler pages secret put VOTE_SALT --project-name moobangbench
+npm run deploy
+```
+
+Use a long random value for `VOTE_SALT`. Every later manual deployment is `npm run deploy`.
+
+### GitHub automatic deployment
+
+`.github/workflows/deploy.yml` deploys every push to `main`. Add these GitHub Actions repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`: token with Pages edit access.
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account id.
+- Optional AdSense values listed in `.env.example` after approval.
+
+The committed `wrangler.toml` must contain the real D1 database id before the workflow runs.
+
+## AdSense constraint
+
+The code integration is ready, including environment-controlled script loading, three configurable ad slots, `ads.txt`, stable placeholders, and `/privacy`.
+
+Google requires a standard domain without a path and states that subdomains are allowed only for AdSense host partners. `moobangbench.pages.dev` and `*.github.io` are provider subdomains, so regular AdSense enrollment cannot be completed on the fully free URL.
+
+To enable AdSense later:
+
+1. Purchase or otherwise obtain a standard domain you control and attach it to the Pages project.
+2. Apply for AdSense and wait for Google site approval.
+3. Copy `.env.example` values into Cloudflare Pages or GitHub Actions build variables using the real client and slot ids.
+4. Replace the publisher id in `public/ads.txt`.
+5. Enable Google's consent management message where required.
+
+Without all AdSense variables, the site intentionally renders ad placeholders and sends no AdSense requests.
 
 ## Add benchmark content
 
-1. Copy an artifact to `public/demos/<result-id>/`. Multi-file demos are supported.
-2. Add the benchmark, model, or tool to its JSON file in `src/data/` when first introduced.
+1. Copy an artifact to `public/demos/<result-id>/`.
+2. Add new benchmark, model, or tool records under `src/data/`.
 3. Append the result to `src/data/results.json`.
-4. Run `npm run check:data` and `npm run build`, then push. Cloudflare Pages deploys the update.
+4. Run `npm run check:data` and `npm run build`, then push or run `npm run deploy`.
 
 Editor scores are the one-decimal mean of functionality, code quality, polish, and performance. Leave `editorScores` as `null` until reviewed.

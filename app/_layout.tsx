@@ -1,5 +1,6 @@
 import { Slot } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { adSlots } from '@/ads';
 import { AdSlot } from '@/components/AdSlot';
 import { MobileBar, Sidebar } from '@/components/Sidebar';
 import { I18nProvider } from '@/i18n/I18nContext';
@@ -13,7 +14,7 @@ export default function RootLayout() {
         <div className="mb-main">
           <MobileBar />
           <View style={styles.content}>
-            <AdSlot slot="0000000001" />
+            <AdSlot slot={adSlots.top} />
             <Slot />
           </View>
         </div>
