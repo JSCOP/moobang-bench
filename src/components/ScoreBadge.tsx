@@ -12,11 +12,13 @@ export function ScoreBadge({ editor, community }: ScoreBadgeProps) {
   const { t } = useI18n();
   return (
     <View style={styles.row}>
-      <View style={[styles.badge, styles.editor]}>
+      <View style={styles.badge}>
         <Text style={styles.label}>{t('editor')}</Text>
-        <Text style={styles.value}>{editor === null ? '—' : `${editor.toFixed(1)}/10`}</Text>
+        <Text style={[styles.value, editor !== null && styles.valueAccent]}>
+          {editor === null ? '—' : `${editor.toFixed(1)}/10`}
+        </Text>
       </View>
-      <View style={[styles.badge, styles.community]}>
+      <View style={styles.badge}>
         <Text style={styles.label}>{t('community')}</Text>
         <Text style={styles.value}>{community ? `${community.avg.toFixed(1)}/10 (${community.count})` : t('no_votes')}</Text>
       </View>
@@ -26,9 +28,8 @@ export function ScoreBadge({ editor, community }: ScoreBadgeProps) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  badge: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6, gap: 2 },
-  editor: { borderColor: colors.purple, backgroundColor: '#1A1127' },
-  community: { borderColor: colors.cyan, backgroundColor: '#0B1C24' },
-  label: { color: colors.muted, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.7 },
-  value: { color: colors.text, fontSize: 13, fontWeight: '800' },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.sm, paddingVertical: 5 },
+  label: { color: colors.faint, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  value: { color: colors.text, fontSize: 12, fontWeight: '700' },
+  valueAccent: { color: colors.accent },
 });

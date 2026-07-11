@@ -26,10 +26,10 @@ export default function AboutPage() {
 }
 
 const styles = StyleSheet.create({
-  page: { paddingVertical: spacing.xl, gap: spacing.lg, maxWidth: 800 },
-  title: { color: colors.text, fontSize: 42, fontWeight: '900' },
-  lead: { color: colors.muted, fontSize: 20, lineHeight: 31 },
-  card: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.sm },
-  cardTitle: { color: colors.cyan, fontSize: 22, fontWeight: '900' },
-  body: { color: colors.text, fontSize: 16, lineHeight: 25 },
+  page: { paddingVertical: spacing.xl, gap: spacing.lg, maxWidth: 720 },
+  title: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  lead: { color: colors.muted, fontSize: 15, lineHeight: 24 },
+  card: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.sm },
+  cardTitle: { color: colors.text, fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  body: { color: colors.muted, fontSize: 14, lineHeight: 22 },
 });

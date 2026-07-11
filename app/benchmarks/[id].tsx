@@ -5,7 +5,7 @@ import { AdSlot } from '@/components/AdSlot';
 import { ResultCard } from '@/components/ResultCard';
 import { getBenchmarks, getResultsByBenchmark } from '@/data';
 import { useScores } from '@/hooks/useScores';
-import { colors, spacing } from '@/theme';
+import { colors, radius, spacing } from '@/theme';
 
 export function generateStaticParams() {
   return getBenchmarks().map((benchmark) => ({ id: benchmark.id }));
@@ -42,11 +42,11 @@ export default function BenchmarkDetailPage() {
 
 const styles = StyleSheet.create({
   page: { paddingVertical: spacing.xl, gap: spacing.xl },
-  header: { gap: spacing.sm, maxWidth: 800 },
-  date: { color: colors.cyan, fontSize: 13, fontWeight: '800' },
-  title: { color: colors.text, fontSize: 42, lineHeight: 48, fontWeight: '900' },
-  description: { color: colors.muted, fontSize: 18, lineHeight: 27 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  tag: { color: colors.purple, fontWeight: '800', fontSize: 12 },
+  header: { gap: spacing.sm, maxWidth: 720 },
+  date: { color: colors.faint, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  title: { color: colors.text, fontSize: 28, lineHeight: 34, fontWeight: '800', letterSpacing: -0.5 },
+  description: { color: colors.muted, fontSize: 14, lineHeight: 22 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  tag: { color: colors.muted, fontSize: 11, fontWeight: '600', borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, alignItems: 'flex-start' },
 });

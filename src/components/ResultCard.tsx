@@ -17,13 +17,15 @@ export function ResultCard({ result, community }: ResultCardProps) {
   const { t } = useI18n();
   const model = getModel(result.model);
   const tool = getTool(result.tool);
-  const title = result.tool === 'none' ? model?.name : `${model?.name} · ${tool?.name}`;
 
   return (
     <View style={styles.card}>
-      <DemoFrame resultId={result.id} height={260} />
+      <DemoFrame resultId={result.id} height={220} />
       <View style={styles.body}>
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{model?.name ?? result.model}</Text>
+          {result.tool !== 'none' ? <Text style={styles.toolTag}>{tool?.name ?? result.tool}</Text> : null}
+        </View>
         <ScoreBadge editor={editorScore(result)} community={community} />
         <Link href={{ pathname: '/results/[id]', params: { id: result.id } }} asChild>
           <Pressable accessibilityRole="link" style={styles.link}>
@@ -36,9 +38,11 @@ export function ResultCard({ result, community }: ResultCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { flexBasis: 330, flexGrow: 1, maxWidth: 535, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface },
-  body: { padding: spacing.md, gap: spacing.md },
-  title: { color: colors.text, fontSize: 18, fontWeight: '800' },
-  link: { alignSelf: 'flex-start', paddingVertical: spacing.sm },
-  linkText: { color: colors.cyan, fontWeight: '800' },
+  card: { flexBasis: 320, flexGrow: 1, maxWidth: 560, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface },
+  body: { padding: spacing.lg, gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  title: { color: colors.text, fontSize: 15, fontWeight: '700' },
+  toolTag: { color: colors.muted, fontSize: 11, fontWeight: '600', borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  link: { alignSelf: 'flex-start', paddingVertical: spacing.xs },
+  linkText: { color: colors.accent, fontSize: 13, fontWeight: '700' },
 });

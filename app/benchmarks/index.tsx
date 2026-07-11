@@ -7,6 +7,7 @@ import { colors, radius, spacing } from '@/theme';
 
 export default function BenchmarksPage() {
   const { t } = useI18n();
+  const benchmarks = getBenchmarks();
   return (
     <View style={styles.page}>
       <Head>
@@ -17,15 +18,25 @@ export default function BenchmarksPage() {
         <Text style={styles.title}>{t('benchmarks_title')}</Text>
         <Text style={styles.description}>{t('benchmarks_description')}</Text>
       </View>
-      <View style={styles.grid}>
-        {getBenchmarks().map((benchmark) => (
+      <View style={styles.list}>
+        {benchmarks.map((benchmark, index) => (
           <Link key={benchmark.id} href={{ pathname: '/benchmarks/[id]', params: { id: benchmark.id } }} asChild>
-            <Pressable accessibilityRole="link" style={styles.card}>
-              <Text style={styles.cardTitle}>{benchmark.title}</Text>
-              <Text style={styles.cardDescription}>{benchmark.description}</Text>
-              <View style={styles.tags}>{benchmark.tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}</View>
-              <Text style={styles.meta}>{getResultsByBenchmark(benchmark.id).length} {t('results')} · {benchmark.date}</Text>
-              <Text style={styles.link}>{t('view_benchmark')} →</Text>
+            <Pressable
+              accessibilityRole="link"
+              style={StyleSheet.flatten([styles.rowItem, index === benchmarks.length - 1 && styles.lastRow])}
+            >
+              <View style={styles.rowMain}>
+                <Text style={styles.rowTitle}>{benchmark.title}</Text>
+                <Text style={styles.rowDescription}>{benchmark.description}</Text>
+                <View style={styles.tags}>
+                  {benchmark.tags.map((tag) => <Text key={tag} style={styles.tag}>{tag}</Text>)}
+                </View>
+              </View>
+              <View style={styles.rowMeta}>
+                <Text style={styles.metaCount}>{getResultsByBenchmark(benchmark.id).length} {t('results')}</Text>
+                <Text style={styles.metaDate}>{benchmark.date}</Text>
+                <Text style={styles.link}>{t('view_benchmark')} →</Text>
+              </View>
             </Pressable>
           </Link>
         ))}
@@ -36,15 +47,19 @@ export default function BenchmarksPage() {
 
 const styles = StyleSheet.create({
   page: { paddingVertical: spacing.xl, gap: spacing.xl },
-  header: { gap: spacing.sm, maxWidth: 720 },
-  title: { color: colors.text, fontSize: 42, fontWeight: '900' },
-  description: { color: colors.muted, fontSize: 18, lineHeight: 27 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  card: { flexBasis: 360, flexGrow: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
-  cardTitle: { color: colors.text, fontSize: 24, fontWeight: '900' },
-  cardDescription: { color: colors.muted, fontSize: 15, lineHeight: 23 },
-  tags: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  tag: { color: colors.cyan, fontSize: 12, fontWeight: '700' },
-  meta: { color: colors.muted, fontSize: 13 },
-  link: { color: colors.cyan, fontWeight: '900' },
+  header: { gap: spacing.sm, maxWidth: 680 },
+  title: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  description: { color: colors.muted, fontSize: 14, lineHeight: 22 },
+  list: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, overflow: 'hidden' },
+  rowItem: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, justifyContent: 'space-between', padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border },
+  lastRow: { borderBottomWidth: 0 },
+  rowMain: { flexGrow: 1, flexShrink: 1, flexBasis: 320, gap: spacing.sm },
+  rowTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  rowDescription: { color: colors.muted, fontSize: 13, lineHeight: 20 },
+  tags: { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
+  tag: { color: colors.muted, fontSize: 11, fontWeight: '600', borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  rowMeta: { alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing.xs },
+  metaCount: { color: colors.text, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  metaDate: { color: colors.faint, fontSize: 12 },
+  link: { color: colors.accent, fontSize: 12, fontWeight: '700' },
 });

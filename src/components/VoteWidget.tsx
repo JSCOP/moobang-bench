@@ -70,13 +70,13 @@ export function VoteWidget({ resultId, onVoted }: VoteWidgetProps) {
 
 const styles = StyleSheet.create({
   container: { gap: spacing.md },
-  title: { color: colors.text, fontSize: 18, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 15, fontWeight: '700' },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  button: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceRaised },
-  selected: { backgroundColor: colors.cyan, borderColor: colors.cyan },
+  button: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceRaised },
+  selected: { backgroundColor: colors.accent, borderColor: colors.accent },
   disabled: { opacity: 0.6 },
-  buttonText: { color: colors.text, fontWeight: '800' },
-  selectedText: { color: colors.background },
-  success: { color: colors.lime, fontSize: 13 },
-  failure: { color: colors.danger, fontSize: 13 },
+  buttonText: { color: colors.muted, fontSize: 13, fontWeight: '700' },
+  selectedText: { color: colors.onAccent },
+  success: { color: colors.ok, fontSize: 12 },
+  failure: { color: colors.danger, fontSize: 12 },
 });

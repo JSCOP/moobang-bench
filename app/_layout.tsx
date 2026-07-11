@@ -1,30 +1,34 @@
 import { Slot } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { AdSlot } from '@/components/AdSlot';
-import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
+import { MobileBar, Sidebar } from '@/components/Sidebar';
 import { I18nProvider } from '@/i18n/I18nContext';
-import { colors, contentMaxWidth, spacing } from '@/theme';
+import { contentMaxWidth, spacing } from '@/theme';
 
 export default function RootLayout() {
   return (
     <I18nProvider>
-      <View style={styles.page}>
-        <Header />
-        <View style={styles.adWrap}>
-          <AdSlot slot="0000000001" />
-        </View>
-        <View style={styles.content}>
-          <Slot />
-        </View>
-        <Footer />
-      </View>
+      <div className="mb-shell">
+        <Sidebar />
+        <div className="mb-main">
+          <MobileBar />
+          <View style={styles.content}>
+            <AdSlot slot="0000000001" />
+            <Slot />
+          </View>
+        </div>
+      </div>
     </I18nProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { minHeight: '100%', backgroundColor: colors.background },
-  adWrap: { width: '100%', maxWidth: contentMaxWidth, marginHorizontal: 'auto', paddingHorizontal: spacing.md },
-  content: { width: '100%', maxWidth: contentMaxWidth, marginHorizontal: 'auto', paddingHorizontal: spacing.md, flexGrow: 1 },
+  content: {
+    width: '100%',
+    maxWidth: contentMaxWidth,
+    marginHorizontal: 'auto',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+    flexGrow: 1,
+  },
 });

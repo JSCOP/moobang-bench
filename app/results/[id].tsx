@@ -52,7 +52,7 @@ export default function ResultDetailPage() {
         <ScoreBadge editor={editorScore(result)} community={community} />
       </View>
 
-      <div ref={fullscreenRef} style={{ background: '#000', borderRadius: 14, overflow: 'hidden' }}>
+      <div ref={fullscreenRef} style={{ background: '#000', borderRadius: 8, overflow: 'hidden' }}>
         <DemoFrame resultId={result.id} height="70vh" />
       </div>
       <View style={styles.actions}>
@@ -104,21 +104,21 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   page: { paddingVertical: spacing.xl, gap: spacing.lg },
   header: { gap: spacing.sm },
-  eyebrow: { color: colors.cyan, fontSize: 13, fontWeight: '800' },
-  title: { color: colors.text, fontSize: 38, fontWeight: '900' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, alignItems: 'center' },
-  button: { backgroundColor: colors.cyan, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  buttonText: { color: colors.background, fontWeight: '900' },
-  rawLink: { color: colors.cyan, fontWeight: '800', textDecorationLine: 'none' },
+  eyebrow: { color: colors.faint, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  title: { color: colors.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, alignItems: 'center' },
+  button: { backgroundColor: colors.text, borderRadius: radius.sm, paddingHorizontal: spacing.lg, paddingVertical: 8 },
+  buttonText: { color: colors.bg, fontSize: 13, fontWeight: '700' },
+  rawLink: { color: colors.muted, fontSize: 13, fontWeight: '600', textDecorationLine: 'none' },
   panels: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  panel: { flexBasis: 340, flexGrow: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
-  panelTitle: { color: colors.text, fontSize: 20, fontWeight: '900' },
+  panel: { flexBasis: 320, flexGrow: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
+  panelTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.sm },
-  metaLabel: { color: colors.muted, fontSize: 13, fontWeight: '700' },
-  metaValue: { color: colors.text, fontSize: 14, textAlign: 'right', flexShrink: 1 },
+  metaLabel: { color: colors.faint, fontSize: 12, fontWeight: '600' },
+  metaValue: { color: colors.text, fontSize: 13, textAlign: 'right', flexShrink: 1 },
   criterion: { flexDirection: 'row', justifyContent: 'space-between' },
-  criterionValue: { color: colors.lime, fontWeight: '900' },
-  unrated: { color: colors.muted, fontSize: 16 },
-  votePanel: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.lg },
+  criterionValue: { color: colors.accent, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  unrated: { color: colors.faint, fontSize: 13 },
+  votePanel: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.lg },
   notFound: { color: colors.danger, padding: spacing.xl },
 });

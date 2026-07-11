@@ -24,25 +24,27 @@ export function LeaderboardTable({ title, rows, scores }: { title: string; rows:
       <Text style={styles.title}>{title}</Text>
       <View style={styles.table}>
         <View style={[styles.row, styles.header]}>
-          <Text style={[styles.cell, styles.rank]}>{t('rank')}</Text>
-          <Text style={[styles.cell, styles.name]}>{t('name')}</Text>
-          <Text style={styles.cell}>{t('editor')}</Text>
-          <Text style={styles.cell}>{t('community')}</Text>
-          <Text style={styles.cell}>{t('results')}</Text>
+          <Text style={[styles.headerCell, styles.rank]}>#</Text>
+          <Text style={[styles.headerCell, styles.name]}>{t('name')}</Text>
+          <Text style={[styles.headerCell, styles.num]}>{t('editor')}</Text>
+          <Text style={[styles.headerCell, styles.num]}>{t('community')}</Text>
+          <Text style={[styles.headerCell, styles.num]}>{t('results')}</Text>
         </View>
         {rows.map((row, index) => {
           const community = communityScore(row, scores);
           const empty = row.resultCount === 0;
           return (
-            <View key={row.id} style={[styles.row, empty && styles.empty]}>
-              <Text style={[styles.cell, styles.rank]}>{index + 1}</Text>
+            <View key={row.id} style={[styles.row, index === rows.length - 1 && styles.lastRow, empty && styles.empty]}>
+              <Text style={[styles.cell, styles.rank, styles.rankText]}>{index + 1}</Text>
               <View style={[styles.cell, styles.name]}>
                 <Text style={styles.primary}>{row.name}</Text>
                 <Text style={styles.secondary}>{empty ? t('no_data') : row.subtitle}</Text>
               </View>
-              <Text style={styles.cell}>{row.editor === null ? '—' : row.editor.toFixed(1)}</Text>
-              <Text style={styles.cell}>{community === null ? '—' : community.toFixed(1)}</Text>
-              <Text style={styles.cell}>{row.resultCount}</Text>
+              <Text style={[styles.cell, styles.num, row.editor !== null && styles.scoreText]}>
+                {row.editor === null ? '—' : row.editor.toFixed(1)}
+              </Text>
+              <Text style={[styles.cell, styles.num]}>{community === null ? '—' : community.toFixed(1)}</Text>
+              <Text style={[styles.cell, styles.num]}>{row.resultCount}</Text>
             </View>
           );
         })}
@@ -52,15 +54,20 @@ export function LeaderboardTable({ title, rows, scores }: { title: string; rows:
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.md },
-  title: { color: colors.text, fontSize: 26, fontWeight: '900' },
-  table: { minWidth: 680, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: 58, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface },
-  header: { minHeight: 42, backgroundColor: colors.surfaceRaised },
-  empty: { opacity: 0.45 },
-  cell: { width: 120, paddingHorizontal: spacing.sm, color: colors.text, fontSize: 13 },
-  rank: { width: 56, textAlign: 'center' },
+  section: { gap: spacing.md, flexGrow: 1 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
+  table: { minWidth: 640, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 44, borderBottomWidth: 1, borderBottomColor: colors.border },
+  lastRow: { borderBottomWidth: 0 },
+  header: { minHeight: 34, backgroundColor: colors.surfaceRaised },
+  empty: { opacity: 0.4 },
+  headerCell: { paddingHorizontal: spacing.md, color: colors.faint, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, width: 110 },
+  cell: { width: 110, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, color: colors.muted, fontSize: 13 },
+  rank: { width: 44, textAlign: 'center', paddingHorizontal: 0 },
+  rankText: { color: colors.faint, fontVariant: ['tabular-nums'] },
+  num: { textAlign: 'right', fontVariant: ['tabular-nums'] },
   name: { flexGrow: 1, width: 220 },
-  primary: { color: colors.text, fontWeight: '800' },
-  secondary: { color: colors.muted, fontSize: 11, marginTop: 2 },
+  primary: { color: colors.text, fontSize: 13, fontWeight: '700' },
+  secondary: { color: colors.faint, fontSize: 11, marginTop: 1 },
+  scoreText: { color: colors.text, fontWeight: '700' },
 });

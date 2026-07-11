@@ -43,6 +43,6 @@ export function AdSlot({ slot, style }: AdSlotProps) {
 
 const styles = StyleSheet.create({
   placeholder: { minHeight: 90, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, marginVertical: spacing.lg },
-  placeholderText: { color: colors.muted, fontSize: 11, textTransform: 'uppercase', letterSpacing: 2 },
+  placeholderText: { color: colors.faint, fontSize: 10, textTransform: 'uppercase', letterSpacing: 2 },
   live: { minHeight: 90, marginVertical: spacing.lg },
 });
